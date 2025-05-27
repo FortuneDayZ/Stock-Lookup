@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- -----------------------------------------------------------
+       Metadata and External Resources
+  ----------------------------------------------------------- -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Search</title>
+
+  <!-- Link to external CSS in /static folder -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <!-- -----------------------------------------------------------
+       Container: Main centered layout box
+  ----------------------------------------------------------- -->
+  <div class="container">
+    <div class="outer-border">
+      <h2>Stock Search</h2>
+
+      <!-- -----------------------------------------------------------
+           Form: Stock ticker input and buttons
+      ----------------------------------------------------------- -->
+      <form id="stockForm" novalidate>
+        <div class="input-row">
+          <label for="ticker">
+            Enter Stock Ticker Symbol <span style="color: red">*</span>
+          </label>
+          <input type="text" id="ticker" name="ticker" placeholder="e.g., AAPL or GOOG" required />
+        </div>
+
+        <!-- Button row: Search and Clear -->
+        <div class="button-container">
+          <button type="submit" id="searchBtn">Search</button>
+          <button type="button" id="clearBtn">Clear</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- -----------------------------------------------------------
+         Horizontal line and error message section
+    ----------------------------------------------------------- -->
+    <hr class="separator" />
+    <div id="errorMessage"></div>
+
+    <!-- -----------------------------------------------------------
+         Results Box: Hidden by default, shown after successful search
+    ----------------------------------------------------------- -->
+    <div id="resultBox" style="display: none;">
+      <div class="result-box">
+
+        <!-- Tab navigation buttons -->
+        <div class="tabs-box">
+          <div class="tab-buttons">
+            <button type="button" class="tab active" data-tab="outlook">Company Outlook</button>
+            <button type="button" class="tab" data-tab="summary">Stock Summary</button>
+            <button type="button" class="tab" data-tab="history">Search History</button>
+          </div>
+        </div>
+
+        <!-- Tab content sections (populated via JavaScript) -->
+        <div id="outlook" class="tab-content active"></div>
+        <div id="summary" class="tab-content"></div>
+        <div id="history" class="tab-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- -----------------------------------------------------------
+       JavaScript: Handles form submission and tab logic
+  ----------------------------------------------------------- -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

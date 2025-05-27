@@ -1,0 +1,219 @@
+/* -----------------------------------------------------------
+   Base Layout Styling
+----------------------------------------------------------- */
+
+body {
+  background-color: #4c489d;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.container {
+  width: 90%;
+  max-width: 700px;
+  margin-top: 60px;
+}
+
+.outer-border {
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  padding: 30px 40px;
+  box-sizing: border-box;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* -----------------------------------------------------------
+   Header Styling
+----------------------------------------------------------- */
+
+h2 {
+  text-align: center;
+  margin-top: 0;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+/* -----------------------------------------------------------
+   Form Layout and Input Styling
+----------------------------------------------------------- */
+
+form {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+label {
+  font-weight: normal;
+}
+
+input[type="text"] {
+  padding: 5px;
+  width: 180px;
+  border: 1px solid white;
+  border-radius: 4px;
+}
+
+/* -----------------------------------------------------------
+   Button Styling
+----------------------------------------------------------- */
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#searchBtn {
+  padding: 6px 20px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#searchBtn:hover {
+  background-color: #eee;
+}
+
+#clearBtn {
+  padding: 6px 0px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.button-container button {
+  width: 80px;
+}
+
+/* -----------------------------------------------------------
+   Separators and Error Message Styling
+----------------------------------------------------------- */
+
+hr.separator {
+  border: none;
+  height: 1px;
+  background-color: #ccc;
+  margin: 15px auto 5px;
+  width: 100%;
+}
+
+#errorMessage {
+  background-color: #4c489d;
+  color: black;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 6px;
+}
+
+/* -----------------------------------------------------------
+   Tab Navigation Styling
+----------------------------------------------------------- */
+
+.tabs-box {
+  background-color: transparent;
+  padding: 0;
+}
+
+.tab-buttons {
+  display: flex;
+  background-color: #f0f0f0;
+}
+
+.tab-buttons button {
+  flex: 1;
+  padding: 10px 20px;
+  background-color: white;
+  border: none;
+  color: #333;
+  font-weight: normal;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tab-buttons button.active {
+  background-color: #D3D3D3;
+  font-weight: bold;
+  color: black;
+}
+
+.tab-content {
+  display: none;
+  background-color: white;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-top: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* -----------------------------------------------------------
+   Table and Stock Data Display
+----------------------------------------------------------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+th, td {
+  padding: 10px 5px;
+  border: 1px solid #bbb;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  background-color: #f2f2f2;
+  white-space: nowrap;
+}
+
+td:nth-child(2) {
+  text-align: center;
+}
+
+img.arrow {
+  width: 18px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+/* -----------------------------------------------------------
+   Truncate Long Descriptions (Max 5 lines)
+----------------------------------------------------------- */
+
+td.description {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 6.2em;
+  line-height: 1.36em;
+}
