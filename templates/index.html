@@ -6,66 +6,90 @@
   ----------------------------------------------------------- -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stock Search</title>
-
+  <title>StockLookup - Real-time Stock Information</title>
+  
+  <!-- Add Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Add Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Link to external CSS in /static folder -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-  <!-- -----------------------------------------------------------
-       Container: Main centered layout box
-  ----------------------------------------------------------- -->
-  <div class="container">
-    <div class="outer-border">
-      <h2>Stock Search</h2>
-
-      <!-- -----------------------------------------------------------
-           Form: Stock ticker input and buttons
-      ----------------------------------------------------------- -->
-      <form id="stockForm" novalidate>
-        <div class="input-row">
-          <label for="ticker">
-            Enter Stock Ticker Symbol <span style="color: red">*</span>
-          </label>
-          <input type="text" id="ticker" name="ticker" placeholder="e.g., AAPL or GOOG" required />
-        </div>
-
-        <!-- Button row: Search and Clear -->
-        <div class="button-container">
-          <button type="submit" id="searchBtn">Search</button>
-          <button type="button" id="clearBtn">Clear</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- -----------------------------------------------------------
-         Horizontal line and error message section
-    ----------------------------------------------------------- -->
-    <hr class="separator" />
-    <div id="errorMessage"></div>
-
-    <!-- -----------------------------------------------------------
-         Results Box: Hidden by default, shown after successful search
-    ----------------------------------------------------------- -->
-    <div id="resultBox" style="display: none;">
-      <div class="result-box">
-
-        <!-- Tab navigation buttons -->
-        <div class="tabs-box">
-          <div class="tab-buttons">
-            <button type="button" class="tab active" data-tab="outlook">Company Outlook</button>
-            <button type="button" class="tab" data-tab="summary">Stock Summary</button>
-            <button type="button" class="tab" data-tab="history">Search History</button>
-          </div>
-        </div>
-
-        <!-- Tab content sections (populated via JavaScript) -->
-        <div id="outlook" class="tab-content active"></div>
-        <div id="summary" class="tab-content"></div>
-        <div id="history" class="tab-content"></div>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <i class="fas fa-chart-line"></i>
+        <span>StockLookup</span>
+      </div>
+      <div class="nav-links">
+        <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="#" id="themeToggle"><i class="fas fa-moon"></i> Theme</a>
       </div>
     </div>
-  </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <div class="search-card">
+        <h1>Stock Market Research</h1>
+        <p class="subtitle">Enter a stock ticker symbol to get real-time information</p>
+
+        <form id="stockForm" novalidate>
+          <div class="input-group">
+            <div class="input-wrapper">
+              <i class="fas fa-search input-icon"></i>
+              <input type="text" id="ticker" name="ticker" placeholder="e.g., AAPL or GOOG" required />
+            </div>
+            <div class="button-group">
+              <button type="submit" id="searchBtn" class="btn-primary">
+                <i class="fas fa-search"></i> Search
+              </button>
+              <button type="button" id="clearBtn" class="btn-secondary">
+                <i class="fas fa-times"></i> Clear
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div id="errorMessage" class="error-message"></div>
+
+      <div id="resultBox" style="display: none;">
+        <div class="result-card">
+          <div class="tabs-box">
+            <div class="tab-buttons">
+              <button type="button" class="tab active" data-tab="outlook">
+                <i class="fas fa-building"></i> Company Outlook
+              </button>
+              <button type="button" class="tab" data-tab="summary">
+                <i class="fas fa-chart-bar"></i> Stock Summary
+              </button>
+              <button type="button" class="tab" data-tab="history">
+                <i class="fas fa-history"></i> Search History
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-content-wrapper">
+            <div id="outlook" class="tab-content active"></div>
+            <div id="summary" class="tab-content"></div>
+            <div id="history" class="tab-content"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2024 StockLookup. All rights reserved.</p>
+      <p>Data provided by Tiingo</p>
+    </div>
+  </footer>
 
   <!-- -----------------------------------------------------------
        JavaScript: Handles form submission and tab logic

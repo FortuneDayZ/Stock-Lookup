@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify, render_template
 import requests
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 #TODO: PUT YOUR TIINGO KEY HERE
-TIINGO_API_KEY = "YOUR_KEY"
+TIINGO_API_KEY = "4f26eaae3b2b6922c9e4019f374a33ce9c81fa30"
 TIINGO_BASE_META = "https://api.tiingo.com/tiingo/daily/"
 TIINGO_BASE_IEX = "https://api.tiingo.com/iex/"
 
@@ -18,16 +18,37 @@ DB_NAME = "search_history.db"
 
 def init_db():
     with sqlite3.connect(DB_NAME) as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS SearchHistory (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ticker TEXT NOT NULL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                company_json TEXT,
-                stock_json TEXT,
-                last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+        # Check if the table exists
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='SearchHistory'")
+        table_exists = cursor.fetchone() is not None
+
+        if not table_exists:
+            # Create new table with all columns
+            conn.execute('''
+                CREATE TABLE SearchHistory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ticker TEXT NOT NULL,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    company_json TEXT,
+                    stock_json TEXT,
+                    api_timestamp DATETIME
+                )
+            ''')
+        else:
+            # Check if api_timestamp column exists
+            cursor = conn.execute("PRAGMA table_info(SearchHistory)")
+            columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'api_timestamp' not in columns:
+                # Add api_timestamp column
+                conn.execute('ALTER TABLE SearchHistory ADD COLUMN api_timestamp DATETIME')
+                
+                # Update existing rows to use timestamp as api_timestamp
+                conn.execute('''
+                    UPDATE SearchHistory 
+                    SET api_timestamp = timestamp 
+                    WHERE api_timestamp IS NULL
+                ''')
 
 init_db()
 
@@ -53,28 +74,7 @@ def search():
 
     try:
         # -----------------------------------------------------------
-        # Step 1: Check if cached data is available (less than 15 mins old)
-        # -----------------------------------------------------------
-        with sqlite3.connect(DB_NAME) as conn:
-            conn.row_factory = sqlite3.Row
-            row = conn.execute('''
-                SELECT * FROM SearchHistory
-                WHERE ticker = ?
-                ORDER BY last_updated DESC
-                LIMIT 1
-            ''', (ticker,)).fetchone()
-
-            if row:
-                last_updated = datetime.fromisoformat(row['last_updated'])
-                if datetime.utcnow() - last_updated < timedelta(minutes=15):
-                    print(f"Using cached data for {ticker} (cached {datetime.utcnow() - last_updated} ago)")
-                    return jsonify({
-                        "company": eval(row["company_json"]),
-                        "stock": eval(row["stock_json"])
-                    })
-
-        # -----------------------------------------------------------
-        # Step 2: Fetch fresh data from Tiingo API
+        # Step 1: Fetch fresh data from Tiingo API
         # -----------------------------------------------------------
         meta_url = f"{TIINGO_BASE_META}{ticker}?token={TIINGO_API_KEY}"
         iex_url = f"{TIINGO_BASE_IEX}{ticker}?token={TIINGO_API_KEY}"
@@ -88,6 +88,21 @@ def search():
             return jsonify({"error": "No record has been found, please enter a valid symbol."}), 404
 
         company_data = meta_resp.json()
+        
+        # Debug print of company data fields
+        print("\nCompany Data Fields:")
+        print("Name:", company_data.get('name'))
+        print("Ticker:", company_data.get('ticker'))
+        print("Description:", company_data.get('description'))
+        print("Industry:", company_data.get('industry'))
+        print("Industry Code:", company_data.get('industryCode'))
+        print("Sector:", company_data.get('sector'))
+        print("Sector Code:", company_data.get('sectorCode'))
+        print("Website:", company_data.get('website'))
+        print("URL:", company_data.get('url'))
+        print("Exchange:", company_data.get('exchange'))
+        print("Exchange Code:", company_data.get('exchangeCode'))
+        print("\n")
 
         print("Requesting IEX data:", iex_url)
         iex_resp = requests.get(iex_url)
@@ -101,7 +116,7 @@ def search():
             stock_data = {}
 
         # -----------------------------------------------------------
-        # Step 3: Ensure expected keys exist to prevent crashes
+        # Step 2: Ensure expected keys exist to prevent crashes
         # -----------------------------------------------------------
         stock_data.setdefault("last", None)
         stock_data.setdefault("prevClose", None)
@@ -112,7 +127,7 @@ def search():
         stock_data.setdefault("timestamp", None)
 
         # -----------------------------------------------------------
-        # Step 4: Compute change and change_percent if valid
+        # Step 3: Compute change and change_percent if valid
         # -----------------------------------------------------------
         last = stock_data.get("last")
         prev_close = stock_data.get("prevClose")
@@ -127,24 +142,29 @@ def search():
         stock_data["change"] = change
         stock_data["change_percent"] = change_percent
 
+        # Get current timestamp for API call using timezone-aware datetime
+        api_timestamp = datetime.now(UTC).isoformat()
+
         # -----------------------------------------------------------
-        # Step 5: Save fresh data to the database
+        # Step 4: Save API call data to the database
         # -----------------------------------------------------------
         with sqlite3.connect(DB_NAME) as conn:
             conn.execute('''
-                INSERT INTO SearchHistory (ticker, company_json, stock_json, last_updated)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO SearchHistory (ticker, company_json, stock_json, api_timestamp, timestamp)
+                VALUES (?, ?, ?, ?, ?)
             ''', (
                 ticker,
                 str(company_data),
                 str(stock_data),
-                datetime.utcnow().isoformat()
+                api_timestamp,
+                api_timestamp  # Set timestamp to the same value as api_timestamp
             ))
 
-        print(f"Fresh data saved for {ticker}")
+        print(f"API call data saved for {ticker}")
         return jsonify({
             "company": company_data,
-            "stock": stock_data
+            "stock": stock_data,
+            "api_timestamp": api_timestamp
         })
 
     except Exception as e:
@@ -152,7 +172,7 @@ def search():
         return jsonify({"error": "Failed to fetch data from Tiingo."}), 500
 
 # -----------------------------------------------------------
-# Route: Search History API - returns 10 most recent entries
+# Route: Search History API - returns all entries
 # -----------------------------------------------------------
 
 @app.route('/history')
@@ -161,13 +181,16 @@ def history():
         with sqlite3.connect(DB_NAME) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute('''
-                SELECT ticker, timestamp
+                SELECT ticker, timestamp, api_timestamp
                 FROM SearchHistory
                 ORDER BY timestamp DESC
-                LIMIT 10
             ''').fetchall()
 
-        history = [{"ticker": row["ticker"], "timestamp": row["timestamp"]} for row in rows]
+        history = [{
+            "ticker": row["ticker"],
+            "timestamp": row["timestamp"],
+            "api_timestamp": row["api_timestamp"]
+        } for row in rows]
         return jsonify(history)
     except Exception as e:
         print("Error loading history:", e)
