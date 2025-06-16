@@ -152,32 +152,32 @@ function createStockSummary(stock) {
 }
 
 function createCompanyOutlook(company) {
+  console.log("Company data received:", company);
   // Clean up company name by removing class suffixes
-  const cleanName = company.name.replace(/ - Class [A-Z]$/, '');
-  
+  const cleanName = company.name ? company.name.replace(/ - Class [A-Z]$/, '') : 'N/A';
+
   // Format the description with proper line breaks
   const formattedDescription = company.description
     ? company.description.replace(/\. /g, '.<br><br>')
     : '<span class="na-value">No description available</span>';
-  
-  // Map Tiingo API fields to our display fields
+
+  // Try all possible fields for each key detail
   const industry = company.industry || company.industryCode || 'N/A';
   const sector = company.sector || company.sectorCode || 'N/A';
   const website = company.website || company.url || 'N/A';
-  
+  const exchange = company.exchangeCode || company.exchange || 'N/A';
+
   return `
     <div class="company-outlook">
       <div class="company-header">
-        <h2>${cleanName} (${company.ticker})</h2>
-        <p class="exchange">${company.exchangeCode || company.exchange || 'N/A'}</p>
+        <h2>${cleanName} (${company.ticker || ''})</h2>
+        <p class="exchange">${exchange}</p>
       </div>
-      
       <div class="company-details">
         <div class="detail-section">
           <h3>Company Information</h3>
           <p>${formattedDescription}</p>
         </div>
-        
         <div class="detail-section">
           <h3>Key Details</h3>
           <div class="detail-grid">
@@ -258,6 +258,11 @@ stockForm.addEventListener('submit', async (e) => {
     
     // Load history
     loadHistory();
+
+    // Add the button after rendering
+    setTimeout(() => {
+      addWatchlistButton(ticker);
+    }, 100);
   } catch (error) {
     showError(error.message);
   } finally {
@@ -293,3 +298,107 @@ async function loadHistory() {
 
 // Initial history load
 loadHistory();
+
+// --- Watchlist Feature ---
+
+// Watchlist UI injection
+function ensureWatchlistSidebar() {
+  if (!document.getElementById('watchlistSidebar')) {
+    const sidebar = document.createElement('div');
+    sidebar.id = 'watchlistSidebar';
+    sidebar.innerHTML = `
+      <h3>Watchlist</h3>
+      <ul id="watchlist"></ul>
+    `;
+    sidebar.style.position = 'fixed';
+    sidebar.style.top = '80px';
+    sidebar.style.right = '0';
+    sidebar.style.width = '220px';
+    sidebar.style.background = 'var(--card-background)';
+    sidebar.style.borderLeft = '1px solid var(--border-color)';
+    sidebar.style.padding = '1rem';
+    sidebar.style.zIndex = '1001';
+    sidebar.style.height = 'calc(100vh - 80px)';
+    sidebar.style.overflowY = 'auto';
+    sidebar.style.boxShadow = '0 0 8px rgba(0,0,0,0.05)';
+    document.body.appendChild(sidebar);
+  }
+}
+
+function getWatchlist() {
+  return JSON.parse(localStorage.getItem('watchlist') || '[]');
+}
+
+function setWatchlist(list) {
+  localStorage.setItem('watchlist', JSON.stringify(list));
+}
+
+function addToWatchlist(ticker) {
+  let list = getWatchlist();
+  ticker = ticker.toUpperCase();
+  if (!list.includes(ticker)) {
+    list.push(ticker);
+    setWatchlist(list);
+    renderWatchlist();
+  }
+}
+
+function removeFromWatchlist(ticker) {
+  let list = getWatchlist();
+  list = list.filter(t => t !== ticker);
+  setWatchlist(list);
+  renderWatchlist();
+}
+
+function renderWatchlist() {
+  ensureWatchlistSidebar();
+  const list = getWatchlist();
+  const ul = document.getElementById('watchlist');
+  ul.innerHTML = '';
+  if (list.length === 0) {
+    ul.innerHTML = '<li style="color:var(--text-secondary);font-style:italic;">No stocks saved.</li>';
+    return;
+  }
+  list.forEach(ticker => {
+    const li = document.createElement('li');
+    li.style.display = 'flex';
+    li.style.justifyContent = 'space-between';
+    li.style.alignItems = 'center';
+    li.style.marginBottom = '0.5rem';
+    li.innerHTML = `
+      <span class="watchlist-ticker" style="cursor:pointer;color:var(--primary-color);font-weight:600;">${ticker}</span>
+      <button class="remove-watchlist" style="background:none;border:none;color:var(--error-color);font-size:1.1rem;cursor:pointer;">&times;</button>
+    `;
+    li.querySelector('.watchlist-ticker').onclick = () => {
+      tickerInput.value = ticker;
+      stockForm.dispatchEvent(new Event('submit'));
+    };
+    li.querySelector('.remove-watchlist').onclick = () => removeFromWatchlist(ticker);
+    ul.appendChild(li);
+  });
+}
+
+// Add Save to Watchlist button to the result area
+function addWatchlistButton(ticker) {
+  let btn = document.getElementById('watchlistBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'watchlistBtn';
+    btn.className = 'btn-secondary';
+    btn.style.marginLeft = '1rem';
+    btn.innerHTML = '<i class="fas fa-star"></i> Save to Watchlist';
+    btn.onclick = () => addToWatchlist(ticker);
+    // Place the button in the result box header or near the company name
+    const outlook = document.getElementById('outlook');
+    if (outlook) {
+      outlook.prepend(btn);
+    } else {
+      resultBox.prepend(btn);
+    }
+  } else {
+    btn.onclick = () => addToWatchlist(ticker);
+  }
+}
+
+// Initial render
+renderWatchlist();
