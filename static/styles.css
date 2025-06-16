@@ -697,3 +697,96 @@ input[type="text"]:focus {
     transform: none;
   }
 }
+
+.company-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background-color: var(--card-background);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.company-table th,
+.company-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.company-table th {
+  background-color: var(--hover-color);
+  font-weight: 600;
+  color: var(--text-color);
+  width: 30%;
+}
+
+.company-table td {
+  color: var(--text-secondary);
+}
+
+.company-table tr:last-child th,
+.company-table tr:last-child td {
+  border-bottom: none;
+}
+
+.company-table tr:hover td {
+  background-color: var(--hover-color);
+}
+
+.company-table a {
+  color: var(--primary-color);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.company-table a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .company-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .company-table th,
+  .company-table td {
+    padding: 0.75rem;
+  }
+}
+
+.company-description {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  padding: 1rem;
+  background-color: var(--hover-color);
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.company-description::-webkit-scrollbar {
+  width: 8px;
+}
+
+.company-description::-webkit-scrollbar-track {
+  background: var(--card-background);
+  border-radius: 4px;
+}
+
+.company-description::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.company-description::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

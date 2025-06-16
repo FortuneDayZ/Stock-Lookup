@@ -158,7 +158,7 @@ function createCompanyOutlook(company) {
 
   // Format the description with proper line breaks
   const formattedDescription = company.description
-    ? company.description.replace(/\. /g, '.<br><br>')
+    ? company.description.replace(/\. /g, '. ').trim()
     : '<span class="na-value">No description available</span>';
 
   // Try all possible fields for each key detail
@@ -173,31 +173,47 @@ function createCompanyOutlook(company) {
         <h2>${cleanName} (${company.ticker || ''})</h2>
         <p class="exchange">${exchange}</p>
       </div>
+      
       <div class="company-details">
         <div class="detail-section">
           <h3>Company Information</h3>
-          <p>${formattedDescription}</p>
+          <p class="company-description">${formattedDescription}</p>
         </div>
+        
         <div class="detail-section">
           <h3>Key Details</h3>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="label">Industry</span>
-              <span class="value">${industry}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Sector</span>
-              <span class="value">${sector}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Website</span>
-              <span class="value">
-                ${website !== 'N/A' ? 
-                  `<a href="${website}" target="_blank" rel="noopener noreferrer">${website}</a>` : 
-                  '<span class="na-value">N/A</span>'}
-              </span>
-            </div>
-          </div>
+          <table class="company-table">
+            <tbody>
+              <tr>
+                <th>Company Name</th>
+                <td>${cleanName}</td>
+              </tr>
+              <tr>
+                <th>Ticker Symbol</th>
+                <td>${company.ticker || 'N/A'}</td>
+              </tr>
+              <tr>
+                <th>Exchange</th>
+                <td>${exchange}</td>
+              </tr>
+              <tr>
+                <th>Industry</th>
+                <td>${industry}</td>
+              </tr>
+              <tr>
+                <th>Sector</th>
+                <td>${sector}</td>
+              </tr>
+              <tr>
+                <th>Website</th>
+                <td>
+                  ${website !== 'N/A' ? 
+                    `<a href="${website}" target="_blank" rel="noopener noreferrer">${website}</a>` : 
+                    '<span class="na-value">N/A</span>'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -568,54 +584,87 @@ function renderPortfolioModal() {
   modal.innerHTML = `
     <div style="background:var(--card-background);padding:2rem;border-radius:1rem;min-width:350px;max-width:95vw;max-height:90vh;overflow:auto;box-shadow:0 2px 16px rgba(0,0,0,0.15);">
       <h2 style="margin-bottom:1rem;">Portfolio Tracker</h2>
-      <form id="portfolioForm" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
-        <select id="txType" style="padding:0.4rem 0.7rem;border-radius:0.4rem;">
-          <option value="buy">Buy</option>
-          <option value="sell">Sell</option>
-        </select>
-        <input id="txTicker" type="text" placeholder="Ticker" style="width:70px;padding:0.4rem 0.7rem;border-radius:0.4rem;" required />
-        <input id="txShares" type="number" min="1" placeholder="Shares" style="width:80px;padding:0.4rem 0.7rem;border-radius:0.4rem;" required />
-        <input id="txPrice" type="number" min="0" step="0.01" placeholder="Price" style="width:90px;padding:0.4rem 0.7rem;border-radius:0.4rem;" required />
-        <input id="txDate" type="date" style="padding:0.4rem 0.7rem;border-radius:0.4rem;" />
-        <button type="submit" class="btn-primary">Add</button>
+      
+      <form id="portfolioForm" style="margin-bottom:2rem;background:var(--hover-color);padding:1rem;border-radius:0.5rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1rem;">
+          <select id="txType" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);">
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+          <input id="txTicker" type="text" placeholder="Ticker" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          <input id="txShares" type="number" min="1" placeholder="Shares" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          <input id="txPrice" type="number" min="0" step="0.01" placeholder="Price" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          <input id="txDate" type="date" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" />
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;">Add Transaction</button>
       </form>
-      <h3>Transactions</h3>
-      <table style="width:100%;margin-bottom:1rem;border-collapse:collapse;">
-        <thead><tr style="background:var(--hover-color);"><th>Type</th><th>Ticker</th><th>Shares</th><th>Price</th><th>Date</th><th></th></tr></thead>
-        <tbody>
-          ${portfolio.map((tx, i) => `
+
+      <div style="margin-bottom:2rem;">
+        <h3 style="margin-bottom:1rem;">Transactions</h3>
+        <table class="company-table">
+          <thead>
             <tr>
-              <td>${tx.type}</td>
-              <td>${tx.ticker.toUpperCase()}</td>
-              <td>${tx.shares}</td>
-              <td>$${Number(tx.price).toFixed(2)}</td>
-              <td>${tx.date || ''}</td>
-              <td><button onclick="removePortfolioTransaction(${i})" style="background:none;border:none;color:var(--error-color);font-size:1.1rem;cursor:pointer;">&times;</button></td>
+              <th>Type</th>
+              <th>Ticker</th>
+              <th>Shares</th>
+              <th>Price</th>
+              <th>Date</th>
+              <th>Action</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <h3>Holdings</h3>
-      <table style="width:100%;margin-bottom:1rem;border-collapse:collapse;">
-        <thead><tr style="background:var(--hover-color);"><th>Ticker</th><th>Shares</th><th>Avg Cost</th><th>Last Price</th><th>Value</th></tr></thead>
-        <tbody>
-          ${Object.keys(holdings).filter(t=>holdings[t].shares>0).map(ticker => {
-            const shares = holdings[ticker].shares;
-            const avgCost = shares > 0 ? (holdings[ticker].cost / shares) : 0;
-            const lastPrice = prices[ticker] || 'N/A';
-            const value = shares > 0 && lastPrice !== 'N/A' ? (shares * lastPrice) : 0;
-            return `<tr>
-              <td>${ticker}</td>
-              <td>${shares}</td>
-              <td>$${avgCost.toFixed(2)}</td>
-              <td>${lastPrice !== 'N/A' ? '$'+lastPrice.toFixed(2) : 'N/A'}</td>
-              <td>${lastPrice !== 'N/A' ? '$'+value.toFixed(2) : 'N/A'}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-      <div style="font-weight:600;font-size:1.1rem;">Portfolio Value: $${value.toFixed(2)}</div>
-      <button onclick="document.getElementById('portfolioModal').remove();" class="btn-secondary" style="margin-top:1rem;">Close</button>
+          </thead>
+          <tbody>
+            ${portfolio.map((tx, i) => `
+              <tr>
+                <td>${tx.type}</td>
+                <td>${tx.ticker.toUpperCase()}</td>
+                <td>${tx.shares}</td>
+                <td>$${Number(tx.price).toFixed(2)}</td>
+                <td>${tx.date || 'N/A'}</td>
+                <td>
+                  <button onclick="removePortfolioTransaction(${i})" style="background:none;border:none;color:var(--error-color);font-size:1.1rem;cursor:pointer;padding:0.25rem 0.5rem;">&times;</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-bottom:2rem;">
+        <h3 style="margin-bottom:1rem;">Holdings</h3>
+        <table class="company-table">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Shares</th>
+              <th>Avg Cost</th>
+              <th>Last Price</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.keys(holdings).filter(t=>holdings[t].shares>0).map(ticker => {
+              const shares = holdings[ticker].shares;
+              const avgCost = shares > 0 ? (holdings[ticker].cost / shares) : 0;
+              const lastPrice = prices[ticker] || 'N/A';
+              const value = shares > 0 && lastPrice !== 'N/A' ? (shares * lastPrice) : 0;
+              return `<tr>
+                <td>${ticker}</td>
+                <td>${shares}</td>
+                <td>$${avgCost.toFixed(2)}</td>
+                <td>${lastPrice !== 'N/A' ? '$'+lastPrice.toFixed(2) : 'N/A'}</td>
+                <td>${lastPrice !== 'N/A' ? '$'+value.toFixed(2) : 'N/A'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--hover-color);padding:1rem;border-radius:0.5rem;margin-bottom:1rem;">
+        <span style="font-weight:600;font-size:1.1rem;">Portfolio Value:</span>
+        <span style="font-weight:600;font-size:1.1rem;color:var(--primary-color);">$${value.toFixed(2)}</span>
+      </div>
+
+      <button onclick="document.getElementById('portfolioModal').remove();" class="btn-secondary" style="width:100%;">Close</button>
     </div>
   `;
   // Attach form handler
