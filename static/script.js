@@ -263,6 +263,22 @@ stockForm.addEventListener('submit', async (e) => {
     setTimeout(() => {
       addWatchlistButton(ticker);
     }, 100);
+
+    // Render notes section
+    renderNotesSection(ticker);
+
+    // Save latest price after each search
+    setTimeout(() => {
+      try {
+        const summary = document.getElementById('summary');
+        if (summary) {
+          const match = summary.innerHTML.match(/\$([\d,.]+)/);
+          if (match) {
+            setLatestPrice(ticker, parseFloat(match[1].replace(/,/g, '')));
+          }
+        }
+      } catch {}
+    }, 200);
   } catch (error) {
     showError(error.message);
   } finally {
@@ -402,3 +418,241 @@ function addWatchlistButton(ticker) {
 
 // Initial render
 renderWatchlist();
+
+// --- Notes/Tags Feature ---
+function getStockNotes() {
+  return JSON.parse(localStorage.getItem('stockNotes') || '{}');
+}
+
+function setStockNotes(notesObj) {
+  localStorage.setItem('stockNotes', JSON.stringify(notesObj));
+}
+
+function getNoteForTicker(ticker) {
+  const notes = getStockNotes();
+  return notes[ticker] || '';
+}
+
+function saveNoteForTicker(ticker, note) {
+  const notes = getStockNotes();
+  notes[ticker] = note;
+  setStockNotes(notes);
+}
+
+function deleteNoteForTicker(ticker) {
+  const notes = getStockNotes();
+  delete notes[ticker];
+  setStockNotes(notes);
+}
+
+function renderNotesSection(ticker) {
+  let notesBox = document.getElementById('notesBox');
+  if (!notesBox) {
+    notesBox = document.createElement('div');
+    notesBox.id = 'notesBox';
+    notesBox.style.marginTop = '1.5rem';
+    notesBox.style.background = 'var(--hover-color)';
+    notesBox.style.padding = '1rem';
+    notesBox.style.borderRadius = '0.5rem';
+    notesBox.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)';
+    resultBox.appendChild(notesBox);
+  }
+  notesBox.innerHTML = `
+    <h3 style="margin-bottom:0.5rem;">Personal Notes / Tags</h3>
+    <textarea id="stockNoteInput" rows="3" style="width:100%;border-radius:0.4rem;padding:0.5rem;border:1px solid var(--border-color);resize:vertical;">${getNoteForTicker(ticker)}</textarea>
+    <div style="margin-top:0.5rem;display:flex;gap:0.5rem;">
+      <button id="saveNoteBtn" class="btn-primary" style="padding:0.4rem 1.2rem;">Save</button>
+      <button id="deleteNoteBtn" class="btn-secondary" style="padding:0.4rem 1.2rem;">Delete</button>
+    </div>
+    <div id="noteSavedMsg" style="color:var(--success-color);margin-top:0.5rem;display:none;">Saved!</div>
+  `;
+  document.getElementById('saveNoteBtn').onclick = () => {
+    const note = document.getElementById('stockNoteInput').value;
+    saveNoteForTicker(ticker, note);
+    const msg = document.getElementById('noteSavedMsg');
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; }, 1200);
+  };
+  document.getElementById('deleteNoteBtn').onclick = () => {
+    deleteNoteForTicker(ticker);
+    document.getElementById('stockNoteInput').value = '';
+  };
+}
+
+// --- Portfolio Tracker Feature ---
+function getPortfolio() {
+  return JSON.parse(localStorage.getItem('portfolio') || '[]');
+}
+
+function setPortfolio(portfolio) {
+  localStorage.setItem('portfolio', JSON.stringify(portfolio));
+}
+
+function addPortfolioTransaction(tx) {
+  const portfolio = getPortfolio();
+  portfolio.push(tx);
+  setPortfolio(portfolio);
+  renderPortfolioModal();
+}
+
+function removePortfolioTransaction(index) {
+  const portfolio = getPortfolio();
+  portfolio.splice(index, 1);
+  setPortfolio(portfolio);
+  renderPortfolioModal();
+}
+
+function getLatestPrices() {
+  // Use last searched prices from history (or cache)
+  // We'll use a simple cache in localStorage for latest prices
+  return JSON.parse(localStorage.getItem('latestPrices') || '{}');
+}
+
+function setLatestPrice(ticker, price) {
+  const prices = getLatestPrices();
+  prices[ticker] = price;
+  localStorage.setItem('latestPrices', JSON.stringify(prices));
+}
+
+function calculateHoldings() {
+  const portfolio = getPortfolio();
+  const holdings = {};
+  portfolio.forEach(tx => {
+    const t = tx.ticker.toUpperCase();
+    if (!holdings[t]) holdings[t] = { shares: 0, cost: 0 };
+    if (tx.type === 'buy') {
+      holdings[t].shares += Number(tx.shares);
+      holdings[t].cost += Number(tx.shares) * Number(tx.price);
+    } else if (tx.type === 'sell') {
+      holdings[t].shares -= Number(tx.shares);
+      holdings[t].cost -= Number(tx.shares) * Number(tx.price); // For simple avg cost
+    }
+  });
+  return holdings;
+}
+
+function calculatePortfolioValue() {
+  const holdings = calculateHoldings();
+  const prices = getLatestPrices();
+  let total = 0;
+  Object.keys(holdings).forEach(ticker => {
+    if (holdings[ticker].shares > 0 && prices[ticker]) {
+      total += holdings[ticker].shares * prices[ticker];
+    }
+  });
+  return total;
+}
+
+function renderPortfolioModal() {
+  let modal = document.getElementById('portfolioModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'portfolioModal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(0,0,0,0.3)';
+    modal.style.zIndex = '2000';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+  const portfolio = getPortfolio();
+  const holdings = calculateHoldings();
+  const prices = getLatestPrices();
+  const value = calculatePortfolioValue();
+  modal.innerHTML = `
+    <div style="background:var(--card-background);padding:2rem;border-radius:1rem;min-width:350px;max-width:95vw;max-height:90vh;overflow:auto;box-shadow:0 2px 16px rgba(0,0,0,0.15);">
+      <h2 style="margin-bottom:1rem;">Portfolio Tracker</h2>
+      <form id="portfolioForm" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <select id="txType" style="padding:0.4rem 0.7rem;border-radius:0.4rem;">
+          <option value="buy">Buy</option>
+          <option value="sell">Sell</option>
+        </select>
+        <input id="txTicker" type="text" placeholder="Ticker" style="width:70px;padding:0.4rem 0.7rem;border-radius:0.4rem;" required />
+        <input id="txShares" type="number" min="1" placeholder="Shares" style="width:80px;padding:0.4rem 0.7rem;border-radius:0.4rem;" required />
+        <input id="txPrice" type="number" min="0" step="0.01" placeholder="Price" style="width:90px;padding:0.4rem 0.7rem;border-radius:0.4rem;" required />
+        <input id="txDate" type="date" style="padding:0.4rem 0.7rem;border-radius:0.4rem;" />
+        <button type="submit" class="btn-primary">Add</button>
+      </form>
+      <h3>Transactions</h3>
+      <table style="width:100%;margin-bottom:1rem;border-collapse:collapse;">
+        <thead><tr style="background:var(--hover-color);"><th>Type</th><th>Ticker</th><th>Shares</th><th>Price</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          ${portfolio.map((tx, i) => `
+            <tr>
+              <td>${tx.type}</td>
+              <td>${tx.ticker.toUpperCase()}</td>
+              <td>${tx.shares}</td>
+              <td>$${Number(tx.price).toFixed(2)}</td>
+              <td>${tx.date || ''}</td>
+              <td><button onclick="removePortfolioTransaction(${i})" style="background:none;border:none;color:var(--error-color);font-size:1.1rem;cursor:pointer;">&times;</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <h3>Holdings</h3>
+      <table style="width:100%;margin-bottom:1rem;border-collapse:collapse;">
+        <thead><tr style="background:var(--hover-color);"><th>Ticker</th><th>Shares</th><th>Avg Cost</th><th>Last Price</th><th>Value</th></tr></thead>
+        <tbody>
+          ${Object.keys(holdings).filter(t=>holdings[t].shares>0).map(ticker => {
+            const shares = holdings[ticker].shares;
+            const avgCost = shares > 0 ? (holdings[ticker].cost / shares) : 0;
+            const lastPrice = prices[ticker] || 'N/A';
+            const value = shares > 0 && lastPrice !== 'N/A' ? (shares * lastPrice) : 0;
+            return `<tr>
+              <td>${ticker}</td>
+              <td>${shares}</td>
+              <td>$${avgCost.toFixed(2)}</td>
+              <td>${lastPrice !== 'N/A' ? '$'+lastPrice.toFixed(2) : 'N/A'}</td>
+              <td>${lastPrice !== 'N/A' ? '$'+value.toFixed(2) : 'N/A'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div style="font-weight:600;font-size:1.1rem;">Portfolio Value: $${value.toFixed(2)}</div>
+      <button onclick="document.getElementById('portfolioModal').remove();" class="btn-secondary" style="margin-top:1rem;">Close</button>
+    </div>
+  `;
+  // Attach form handler
+  setTimeout(() => {
+    const form = document.getElementById('portfolioForm');
+    if (form) {
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        const tx = {
+          type: document.getElementById('txType').value,
+          ticker: document.getElementById('txTicker').value.trim().toUpperCase(),
+          shares: Number(document.getElementById('txShares').value),
+          price: Number(document.getElementById('txPrice').value),
+          date: document.getElementById('txDate').value
+        };
+        if (!tx.ticker || !tx.shares || !tx.price) return;
+        addPortfolioTransaction(tx);
+        form.reset();
+      };
+    }
+  }, 100);
+}
+
+// Add Portfolio button to UI
+function ensurePortfolioButton() {
+  if (!document.getElementById('portfolioBtn')) {
+    const btn = document.createElement('button');
+    btn.id = 'portfolioBtn';
+    btn.className = 'btn-secondary';
+    btn.innerHTML = '<i class="fas fa-briefcase"></i> Portfolio';
+    btn.style.position = 'fixed';
+    btn.style.bottom = '2rem';
+    btn.style.right = '2.5rem';
+    btn.style.zIndex = '1200';
+    btn.onclick = renderPortfolioModal;
+    document.body.appendChild(btn);
+  }
+}
+
+ensurePortfolioButton();
