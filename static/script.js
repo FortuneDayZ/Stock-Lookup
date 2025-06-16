@@ -690,18 +690,300 @@ function renderPortfolioModal() {
 
 // Add Portfolio button to UI
 function ensurePortfolioButton() {
-  if (!document.getElementById('portfolioBtn')) {
-    const btn = document.createElement('button');
-    btn.id = 'portfolioBtn';
-    btn.className = 'btn-secondary';
-    btn.innerHTML = '<i class="fas fa-briefcase"></i> Portfolio';
-    btn.style.position = 'fixed';
-    btn.style.bottom = '2rem';
-    btn.style.right = '2.5rem';
-    btn.style.zIndex = '1200';
+  const btn = document.getElementById('portfolioBtn');
+  if (btn) {
     btn.onclick = renderPortfolioModal;
-    document.body.appendChild(btn);
   }
 }
 
-ensurePortfolioButton();
+// --- Company Comparison Feature ---
+function ensureComparisonButton() {
+  const btn = document.getElementById('comparisonBtn');
+  if (btn) {
+    btn.onclick = renderComparisonModal;
+  }
+}
+
+function renderComparisonModal() {
+  let modal = document.getElementById('comparisonModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'comparisonModal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(0,0,0,0.3)';
+    modal.style.zIndex = '2000';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div style="background:var(--card-background);padding:2rem;border-radius:1rem;min-width:350px;max-width:95vw;max-height:90vh;overflow:auto;box-shadow:0 2px 16px rgba(0,0,0,0.15);">
+      <h2 style="margin-bottom:1rem;">Compare Companies</h2>
+      
+      <form id="comparisonForm" style="margin-bottom:2rem;background:var(--hover-color);padding:1rem;border-radius:0.5rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1rem;">
+          <input id="ticker1" type="text" placeholder="First Ticker (e.g., AAPL)" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          <input id="ticker2" type="text" placeholder="Second Ticker (e.g., MSFT)" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          <input id="ticker3" type="text" placeholder="Third Ticker (optional)" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" />
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;">Compare Companies</button>
+      </form>
+
+      <div id="comparisonResults" style="display:none;">
+        <div class="comparison-tabs">
+          <button class="tab active" data-tab="overview">Overview</button>
+          <button class="tab" data-tab="financials">Financials</button>
+          <button class="tab" data-tab="ratios">Ratios</button>
+          <button class="tab" data-tab="charts">Charts</button>
+        </div>
+
+        <div class="comparison-content">
+          <div id="overview" class="tab-content active">
+            <table class="company-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th id="company1Name">Company 1</th>
+                  <th id="company2Name">Company 2</th>
+                  <th id="company3Name">Company 3</th>
+                </tr>
+              </thead>
+              <tbody id="overviewData">
+                <!-- Overview data will be populated here -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="financials" class="tab-content">
+            <table class="company-table">
+              <thead>
+                <tr>
+                  <th>Financial Metric</th>
+                  <th id="company1Name">Company 1</th>
+                  <th id="company2Name">Company 2</th>
+                  <th id="company3Name">Company 3</th>
+                </tr>
+              </thead>
+              <tbody id="financialsData">
+                <!-- Financial data will be populated here -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="ratios" class="tab-content">
+            <table class="company-table">
+              <thead>
+                <tr>
+                  <th>Ratio</th>
+                  <th id="company1Name">Company 1</th>
+                  <th id="company2Name">Company 2</th>
+                  <th id="company3Name">Company 3</th>
+                </tr>
+              </thead>
+              <tbody id="ratiosData">
+                <!-- Ratio data will be populated here -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="charts" class="tab-content">
+            <div id="priceChart" style="height:300px;margin-bottom:2rem;"></div>
+            <div id="volumeChart" style="height:300px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach form handler
+  setTimeout(() => {
+    const form = document.getElementById('comparisonForm');
+    if (form) {
+      form.onsubmit = async function(e) {
+        e.preventDefault();
+        const ticker1 = document.getElementById('ticker1').value.trim().toUpperCase();
+        const ticker2 = document.getElementById('ticker2').value.trim().toUpperCase();
+        const ticker3 = document.getElementById('ticker3').value.trim().toUpperCase();
+
+        if (!ticker1 || !ticker2) {
+          showError('Please enter at least two ticker symbols');
+          return;
+        }
+
+        try {
+          const results = await Promise.all([
+            fetchCompanyData(ticker1),
+            fetchCompanyData(ticker2),
+            ticker3 ? fetchCompanyData(ticker3) : null
+          ].filter(Boolean));
+
+          if (results.some(r => !r.ok)) {
+            throw new Error('Failed to fetch data for one or more companies');
+          }
+
+          const companies = await Promise.all(results.map(r => r.json()));
+          displayComparisonResults(companies);
+        } catch (error) {
+          showError(error.message);
+        }
+      };
+    }
+
+    // Attach tab handlers
+    const tabs = modal.querySelectorAll('.comparison-tabs .tab');
+    const contents = modal.querySelectorAll('.comparison-content .tab-content');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.getAttribute('data-tab');
+        
+        tabs.forEach(t => t.classList.remove('active'));
+        contents.forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(target).classList.add('active');
+      });
+    });
+  }, 100);
+}
+
+async function fetchCompanyData(ticker) {
+  const response = await fetch(`/search?ticker=${ticker}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch data for ${ticker}`);
+  }
+  return response;
+}
+
+function displayComparisonResults(companies) {
+  const resultsDiv = document.getElementById('comparisonResults');
+  resultsDiv.style.display = 'block';
+
+  // Update company names in table headers
+  companies.forEach((company, index) => {
+    const nameElement = document.getElementById(`company${index + 1}Name`);
+    if (nameElement) {
+      nameElement.textContent = `${company.company.name} (${company.company.ticker})`;
+    }
+  });
+
+  // Populate overview data
+  const overviewData = document.getElementById('overviewData');
+  overviewData.innerHTML = `
+    <tr>
+      <th>Company Name</th>
+      ${companies.map(c => `<td>${c.company.name}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Industry</th>
+      ${companies.map(c => `<td>${c.company.industry || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Sector</th>
+      ${companies.map(c => `<td>${c.company.sector || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Exchange</th>
+      ${companies.map(c => `<td>${c.company.exchange || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Current Price</th>
+      ${companies.map(c => `<td>$${c.stock.last?.toFixed(2) || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Market Cap</th>
+      ${companies.map(c => `<td>${formatNumber(c.stock.marketCap) || 'N/A'}</td>`).join('')}
+    </tr>
+  `;
+
+  // Populate financials data
+  const financialsData = document.getElementById('financialsData');
+  financialsData.innerHTML = `
+    <tr>
+      <th>Revenue (TTM)</th>
+      ${companies.map(c => `<td>${formatCurrency(c.stock.revenue) || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Net Income (TTM)</th>
+      ${companies.map(c => `<td>${formatCurrency(c.stock.netIncome) || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>EPS (TTM)</th>
+      ${companies.map(c => `<td>${formatCurrency(c.stock.eps) || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Dividend Yield</th>
+      ${companies.map(c => `<td>${formatPercent(c.stock.dividendYield) || 'N/A'}</td>`).join('')}
+    </tr>
+  `;
+
+  // Populate ratios data
+  const ratiosData = document.getElementById('ratiosData');
+  ratiosData.innerHTML = `
+    <tr>
+      <th>P/E Ratio</th>
+      ${companies.map(c => `<td>${formatNumber(c.stock.peRatio) || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>P/B Ratio</th>
+      ${companies.map(c => `<td>${formatNumber(c.stock.pbRatio) || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>Debt/Equity</th>
+      ${companies.map(c => `<td>${formatNumber(c.stock.debtToEquity) || 'N/A'}</td>`).join('')}
+    </tr>
+    <tr>
+      <th>ROE</th>
+      ${companies.map(c => `<td>${formatPercent(c.stock.roe) || 'N/A'}</td>`).join('')}
+    </tr>
+  `;
+
+  // Initialize charts
+  initializeCharts(companies);
+}
+
+function initializeCharts(companies) {
+  // This is a placeholder for chart initialization
+  // You would typically use a charting library like Chart.js or Highcharts here
+  const priceChart = document.getElementById('priceChart');
+  const volumeChart = document.getElementById('volumeChart');
+  
+  // For now, we'll just show a message
+  priceChart.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Price chart will be implemented with historical data</div>';
+  volumeChart.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Volume chart will be implemented with historical data</div>';
+}
+
+// Add mobile sidebar toggle
+function ensureSidebarToggle() {
+  if (!document.getElementById('sidebarToggle')) {
+    const toggle = document.createElement('button');
+    toggle.id = 'sidebarToggle';
+    toggle.className = 'sidebar-toggle';
+    toggle.innerHTML = '<i class="fas fa-bars"></i>';
+    toggle.onclick = () => {
+      const sidebar = document.querySelector('.right-sidebar');
+      sidebar.classList.toggle('active');
+      toggle.innerHTML = sidebar.classList.contains('active') ? 
+        '<i class="fas fa-times"></i>' : 
+        '<i class="fas fa-bars"></i>';
+    };
+    document.body.appendChild(toggle);
+  }
+}
+
+// Initialize all UI elements
+function initializeUI() {
+  ensureComparisonButton();
+  ensurePortfolioButton();
+  ensureSidebarToggle();
+}
+
+// Call initialization when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeUI);

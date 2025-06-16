@@ -78,6 +78,7 @@ def search():
         # -----------------------------------------------------------
         meta_url = f"{TIINGO_BASE_META}{ticker}?token={TIINGO_API_KEY}"
         iex_url = f"{TIINGO_BASE_IEX}{ticker}?token={TIINGO_API_KEY}"
+        fundamentals_url = f"{TIINGO_BASE_META}{ticker}/fundamentals?token={TIINGO_API_KEY}"
 
         print("Requesting company metadata:", meta_url)
         meta_resp = requests.get(meta_url)
@@ -114,6 +115,26 @@ def search():
             stock_data = iex_data[0] if isinstance(iex_data, list) and iex_data else {}
         else:
             stock_data = {}
+
+        # Fetch fundamentals data
+        print("Requesting fundamentals data:", fundamentals_url)
+        fundamentals_resp = requests.get(fundamentals_url)
+        if fundamentals_resp.status_code == 200:
+            fundamentals_data = fundamentals_resp.json()
+            if fundamentals_data:
+                # Extract key financial metrics
+                latest_fundamentals = fundamentals_data[0] if isinstance(fundamentals_data, list) else fundamentals_data
+                stock_data.update({
+                    "revenue": latest_fundamentals.get("revenue"),
+                    "netIncome": latest_fundamentals.get("netIncome"),
+                    "eps": latest_fundamentals.get("eps"),
+                    "dividendYield": latest_fundamentals.get("dividendYield"),
+                    "peRatio": latest_fundamentals.get("peRatio"),
+                    "pbRatio": latest_fundamentals.get("pbRatio"),
+                    "debtToEquity": latest_fundamentals.get("debtToEquity"),
+                    "roe": latest_fundamentals.get("roe"),
+                    "marketCap": latest_fundamentals.get("marketCap")
+                })
 
         # -----------------------------------------------------------
         # Step 2: Ensure expected keys exist to prevent crashes
