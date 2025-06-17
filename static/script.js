@@ -337,22 +337,7 @@ loadHistory();
 function ensureWatchlistSidebar() {
   if (!document.getElementById('watchlistSidebar')) {
     const sidebar = document.createElement('div');
-    sidebar.id = 'watchlistSidebar';
-    sidebar.innerHTML = `
-      <h3>Watchlist</h3>
-      <ul id="watchlist"></ul>
-    `;
-    sidebar.style.position = 'fixed';
-    sidebar.style.top = '80px';
-    sidebar.style.right = '0';
-    sidebar.style.width = '220px';
-    sidebar.style.background = 'var(--card-background)';
-    sidebar.style.borderLeft = '1px solid var(--border-color)';
-    sidebar.style.padding = '1rem';
-    sidebar.style.zIndex = '1001';
-    sidebar.style.height = 'calc(100vh - 80px)';
-    sidebar.style.overflowY = 'auto';
-    sidebar.style.boxShadow = '0 0 8px rgba(0,0,0,0.05)';
+    
     document.body.appendChild(sidebar);
   }
 }
@@ -960,30 +945,208 @@ function initializeCharts(companies) {
   volumeChart.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Volume chart will be implemented with historical data</div>';
 }
 
-// Add mobile sidebar toggle
-function ensureSidebarToggle() {
-  if (!document.getElementById('sidebarToggle')) {
-    const toggle = document.createElement('button');
-    toggle.id = 'sidebarToggle';
-    toggle.className = 'sidebar-toggle';
-    toggle.innerHTML = '<i class="fas fa-bars"></i>';
-    toggle.onclick = () => {
-      const sidebar = document.querySelector('.right-sidebar');
-      sidebar.classList.toggle('active');
-      toggle.innerHTML = sidebar.classList.contains('active') ? 
-        '<i class="fas fa-times"></i>' : 
-        '<i class="fas fa-bars"></i>';
-    };
-    document.body.appendChild(toggle);
-  }
-}
+
 
 // Initialize all UI elements
 function initializeUI() {
   ensureComparisonButton();
   ensurePortfolioButton();
   ensureSidebarToggle();
+  
+  // Add calculator button click handler
+  const calculatorBtn = document.getElementById('calculatorBtn');
+  if (calculatorBtn) {
+    calculatorBtn.onclick = renderPerformanceCalculator;
+  }
 }
 
 // Call initialization when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeUI);
+
+function renderPerformanceCalculator() {
+  let modal = document.getElementById('performanceCalculator');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'performanceCalculator';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(0,0,0,0.3)';
+    modal.style.zIndex = '2000';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div style="background:var(--card-background);padding:2rem;border-radius:1rem;min-width:350px;max-width:95vw;max-height:90vh;overflow:auto;box-shadow:0 2px 16px rgba(0,0,0,0.15);">
+      <h2 style="margin-bottom:1.5rem;">Performance Calculator</h2>
+      
+      <div class="calculator-section">
+        <h3>Return Calculator</h3>
+        <div class="calculator-input-group">
+          <div class="calculator-input">
+            <label for="entryPrice">Entry Price ($)</label>
+            <input type="number" id="entryPrice" min="0" step="0.01" placeholder="0.00" />
+          </div>
+          <div class="calculator-input">
+            <label for="currentPrice">Current Price ($)</label>
+            <input type="number" id="currentPrice" min="0" step="0.01" placeholder="0.00" />
+          </div>
+          <div class="calculator-input">
+            <label for="shares">Number of Shares</label>
+            <input type="number" id="shares" min="1" step="1" placeholder="1" />
+          </div>
+        </div>
+        <div class="calculator-result" id="returnResult" style="display:none;">
+          <h4>Return Analysis</h4>
+          <div class="value" id="returnValue"></div>
+          <div class="detail" id="returnDetail"></div>
+        </div>
+      </div>
+
+      <div class="calculator-section">
+        <h3>Annualized Return</h3>
+        <div class="calculator-input-group">
+          <div class="calculator-input">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" />
+          </div>
+          <div class="calculator-input">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" />
+          </div>
+        </div>
+        <div class="calculator-result" id="annualizedResult" style="display:none;">
+          <h4>Annualized Return</h4>
+          <div class="value" id="annualizedValue"></div>
+          <div class="detail" id="annualizedDetail"></div>
+        </div>
+      </div>
+
+      <div class="calculator-section">
+        <h3>Breakeven Analysis</h3>
+        <div class="calculator-input-group">
+          <div class="calculator-input">
+            <label for="entryPriceBE">Entry Price ($)</label>
+            <input type="number" id="entryPriceBE" min="0" step="0.01" placeholder="0.00" />
+          </div>
+          <div class="calculator-input">
+            <label for="sharesBE">Number of Shares</label>
+            <input type="number" id="sharesBE" min="1" step="1" placeholder="1" />
+          </div>
+          <div class="calculator-input">
+            <label for="fees">Fees/Slippage (%)</label>
+            <input type="number" id="fees" min="0" step="0.01" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="calculator-result" id="breakevenResult" style="display:none;">
+          <h4>Breakeven Price</h4>
+          <div class="value" id="breakevenValue"></div>
+          <div class="detail" id="breakevenDetail"></div>
+        </div>
+      </div>
+
+      <button onclick="document.getElementById('performanceCalculator').remove();" class="btn-secondary" style="width:100%;">Close</button>
+    </div>
+  `;
+
+  // Attach event listeners
+  setTimeout(() => {
+    // Return Calculator
+    const returnInputs = ['entryPrice', 'currentPrice', 'shares'];
+    returnInputs.forEach(id => {
+      document.getElementById(id).addEventListener('input', calculateReturn);
+    });
+
+    // Annualized Return
+    const annualizedInputs = ['startDate', 'endDate'];
+    annualizedInputs.forEach(id => {
+      document.getElementById(id).addEventListener('change', calculateAnnualizedReturn);
+    });
+
+    // Breakeven Analysis
+    const breakevenInputs = ['entryPriceBE', 'sharesBE', 'fees'];
+    breakevenInputs.forEach(id => {
+      document.getElementById(id).addEventListener('input', calculateBreakeven);
+    });
+  }, 100);
+}
+
+function calculateReturn() {
+  const entryPrice = parseFloat(document.getElementById('entryPrice').value) || 0;
+  const currentPrice = parseFloat(document.getElementById('currentPrice').value) || 0;
+  const shares = parseInt(document.getElementById('shares').value) || 0;
+
+  if (entryPrice && currentPrice && shares) {
+    const totalReturn = ((currentPrice - entryPrice) / entryPrice) * 100;
+    const absoluteReturn = (currentPrice - entryPrice) * shares;
+    
+    const resultDiv = document.getElementById('returnResult');
+    const valueDiv = document.getElementById('returnValue');
+    const detailDiv = document.getElementById('returnDetail');
+    
+    resultDiv.style.display = 'block';
+    valueDiv.textContent = `${totalReturn.toFixed(2)}%`;
+    valueDiv.className = `value ${totalReturn >= 0 ? 'positive' : 'negative'}`;
+    detailDiv.textContent = `Absolute Return: ${formatCurrency(absoluteReturn)}`;
+  } else {
+    document.getElementById('returnResult').style.display = 'none';
+  }
+}
+
+function calculateAnnualizedReturn() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const entryPrice = parseFloat(document.getElementById('entryPrice').value) || 0;
+  const currentPrice = parseFloat(document.getElementById('currentPrice').value) || 0;
+
+  if (startDate && endDate && entryPrice && currentPrice) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const years = (end - start) / (1000 * 60 * 60 * 24 * 365);
+    
+    if (years > 0) {
+      const totalReturn = (currentPrice - entryPrice) / entryPrice;
+      const annualizedReturn = (Math.pow(1 + totalReturn, 1 / years) - 1) * 100;
+      
+      const resultDiv = document.getElementById('annualizedResult');
+      const valueDiv = document.getElementById('annualizedValue');
+      const detailDiv = document.getElementById('annualizedDetail');
+      
+      resultDiv.style.display = 'block';
+      valueDiv.textContent = `${annualizedReturn.toFixed(2)}%`;
+      valueDiv.className = `value ${annualizedReturn >= 0 ? 'positive' : 'negative'}`;
+      detailDiv.textContent = `Holding Period: ${years.toFixed(2)} years`;
+    }
+  } else {
+    document.getElementById('annualizedResult').style.display = 'none';
+  }
+}
+
+function calculateBreakeven() {
+  const entryPrice = parseFloat(document.getElementById('entryPriceBE').value) || 0;
+  const shares = parseInt(document.getElementById('sharesBE').value) || 0;
+  const fees = parseFloat(document.getElementById('fees').value) || 0;
+
+  if (entryPrice && shares && fees) {
+    const totalCost = entryPrice * shares;
+    const feeAmount = totalCost * (fees / 100);
+    const breakevenPrice = (totalCost + feeAmount) / shares;
+    
+    const resultDiv = document.getElementById('breakevenResult');
+    const valueDiv = document.getElementById('breakevenValue');
+    const detailDiv = document.getElementById('breakevenDetail');
+    
+    resultDiv.style.display = 'block';
+    valueDiv.textContent = formatCurrency(breakevenPrice);
+    valueDiv.className = 'value';
+    detailDiv.textContent = `Total Fees: ${formatCurrency(feeAmount)}`;
+  } else {
+    document.getElementById('breakevenResult').style.display = 'none';
+  }
+}
