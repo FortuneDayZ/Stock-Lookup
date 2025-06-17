@@ -338,20 +338,12 @@ function createCompanyOutlook(company, stock) {
                 <td>${fullTimeEmployees}</td>
               </tr>
               <tr>
-                <th>Fiscal Year Ends</th>
-                <td>${fiscalYearEnds}</td>
-              </tr>
-              <tr>
                 <th>Market Cap (Intraday)</th>
                 <td>${marketCap}</td>
               </tr>
               <tr>
                 <th>Ex-Dividend Date</th>
                 <td>${exDividendDate}</td>
-              </tr>
-              <tr>
-                <th>Website</th>
-                <td><a href="${website}" target="_blank" rel="noopener noreferrer">${website}</a></td>
               </tr>
             </tbody>
           </table>
