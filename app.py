@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify, render_template
 import requests
 import sqlite3
 from datetime import datetime, timedelta, UTC
+import json
+import yfinance as yf
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -106,10 +108,20 @@ def search():
         print("Exchange Code:", company_data.get('exchangeCode'))
         print("\n")
 
+        # Write company data to JSON file
+        with open('company_data.json', 'w') as f:
+            json.dump(company_data, f, indent=4)
+        print("Company data written to company_data.json")
+
         print("Requesting IEX data:", iex_url)
         iex_resp = requests.get(iex_url)
         print("IEX response status:", iex_resp.status_code)
         print("IEX response body:", iex_resp.text)
+
+        # Write IEX response to JSON file
+        with open('iex_response.json', 'w') as f:
+            json.dump(iex_resp.json(), f, indent=4)
+        print("IEX response written to iex_response.json")
 
         if iex_resp.status_code == 200:
             iex_data = iex_resp.json()
@@ -138,15 +150,24 @@ def search():
                 })
 
         # -----------------------------------------------------------
-        # Step 2: Ensure expected keys exist to prevent crashes
+        # Step 2: Get price data from Yahoo Finance
         # -----------------------------------------------------------
-        stock_data.setdefault("last", None)
-        stock_data.setdefault("prevClose", None)
-        stock_data.setdefault("open", None)
-        stock_data.setdefault("high", None)
-        stock_data.setdefault("low", None)
-        stock_data.setdefault("volume", None)
-        stock_data.setdefault("timestamp", None)
+        try:
+            yf_stock = yf.Ticker(ticker)
+            yf_info = yf_stock.info
+            
+            # Update stock data with Yahoo Finance price information
+            stock_data.update({
+                "last": yf_info.get('regularMarketPrice'),
+                "prevClose": yf_info.get('regularMarketPreviousClose'),
+                "open": yf_info.get('regularMarketOpen'),
+                "high": yf_info.get('regularMarketDayHigh'),
+                "low": yf_info.get('regularMarketDayLow'),
+                "volume": yf_info.get('regularMarketVolume')
+            })
+        except Exception as e:
+            print("Error fetching Yahoo Finance data:", e)
+            # Keep existing price data if Yahoo Finance fails
 
         # -----------------------------------------------------------
         # Step 3: Compute change and change_percent if valid
@@ -191,7 +212,7 @@ def search():
 
     except Exception as e:
         print("Error occurred during search request:", e)
-        return jsonify({"error": "Failed to fetch data from Tiingo."}), 500
+        return jsonify({"error": "Failed to fetch data from APIs."}), 500
 
 # -----------------------------------------------------------
 # Route: Search History API - returns all entries

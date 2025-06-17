@@ -1,0 +1,21 @@
+[
+    {
+        "ticker": "GOOG",
+        "timestamp": "2025-06-16T20:00:00+00:00",
+        "lastSaleTimestamp": null,
+        "quoteTimestamp": null,
+        "open": 175.905,
+        "high": 178.245,
+        "low": 175.82,
+        "mid": null,
+        "tngoLast": 177.94,
+        "last": null,
+        "lastSize": null,
+        "bidSize": null,
+        "bidPrice": null,
+        "askPrice": null,
+        "askSize": null,
+        "volume": 18132529,
+        "prevClose": 175.88
+    }
+]
