@@ -102,23 +102,45 @@
           <i class="fas fa-calculator"></i>
           <span>Performance Calculator</span>
         </button>
-        <div class="watchlist-output">
-          <div class="section-header">
-            <h4>Watchlist</h4>
-            <button id="addToWatchlistBtn" class="icon-btn" title="Add to Watchlist">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
-          <div id="watchlist" class="watchlist-container">
-            <!-- Watchlist items will be populated here -->
-          </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-header">
+          <h3>Watchlist</h3>
+          <button id="addToWatchlistBtn" class="icon-btn" title="Add to Watchlist">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <div id="watchlist" class="watchlist-container">
+          <!-- Watchlist items will be populated here -->
         </div>
       </div>
 
       <div class="sidebar-section">
-        <h3>Notes</h3>
+        <div class="section-header">
+          <h3>Notes</h3>
+          <button id="addNoteBtn" class="icon-btn" title="Add Note">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
         <div id="notesContainer" class="notes-container">
           <!-- Notes will be populated here -->
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-header">
+          <h3>Portfolio Summary</h3>
+        </div>
+        <div id="portfolioSummary" class="portfolio-summary">
+          <div class="summary-item">
+            <span class="label">Total Value</span>
+            <span class="value" id="totalPortfolioValue">$0.00</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Total Return</span>
+            <span class="value" id="totalPortfolioReturn">0.00%</span>
+          </div>
         </div>
       </div>
     </div>
