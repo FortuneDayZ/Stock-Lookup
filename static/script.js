@@ -437,7 +437,7 @@ loadHistory();
 function ensureWatchlistSidebar() {
   if (!document.getElementById('watchlistSidebar')) {
     const sidebar = document.createElement('div');
-    
+    sidebar.id = 'watchlistSidebar';
     document.body.appendChild(sidebar);
   }
 }
@@ -457,6 +457,19 @@ function addToWatchlist(ticker) {
     list.push(ticker);
     setWatchlist(list);
     renderWatchlist();
+    // Show success message
+    const msg = document.createElement('div');
+    msg.style.position = 'fixed';
+    msg.style.top = '20px';
+    msg.style.right = '20px';
+    msg.style.padding = '10px 20px';
+    msg.style.backgroundColor = 'var(--success-color)';
+    msg.style.color = 'white';
+    msg.style.borderRadius = '4px';
+    msg.style.zIndex = '1000';
+    msg.textContent = `${ticker} added to watchlist`;
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 2000);
   }
 }
 
@@ -468,57 +481,49 @@ function removeFromWatchlist(ticker) {
 }
 
 function renderWatchlist() {
-  ensureWatchlistSidebar();
   const list = getWatchlist();
   const ul = document.getElementById('watchlist');
+  if (!ul) return;
+  
   ul.innerHTML = '';
   if (list.length === 0) {
     ul.innerHTML = '<li style="color:var(--text-secondary);font-style:italic;">No stocks saved.</li>';
     return;
   }
+  
   list.forEach(ticker => {
     const li = document.createElement('li');
-    li.style.display = 'flex';
-    li.style.justifyContent = 'space-between';
-    li.style.alignItems = 'center';
-    li.style.marginBottom = '0.5rem';
+    li.className = 'watchlist-item';
     li.innerHTML = `
-      <span class="watchlist-ticker" style="cursor:pointer;color:var(--primary-color);font-weight:600;">${ticker}</span>
+      <span class="ticker" style="cursor:pointer;">${ticker}</span>
       <button class="remove-watchlist" style="background:none;border:none;color:var(--error-color);font-size:1.1rem;cursor:pointer;">&times;</button>
     `;
-    li.querySelector('.watchlist-ticker').onclick = () => {
+    
+    li.querySelector('.ticker').onclick = () => {
       tickerInput.value = ticker;
       stockForm.dispatchEvent(new Event('submit'));
     };
+    
     li.querySelector('.remove-watchlist').onclick = () => removeFromWatchlist(ticker);
     ul.appendChild(li);
   });
 }
 
-// Add Save to Watchlist button to the result area
-function addWatchlistButton(ticker) {
-  let btn = document.getElementById('watchlistBtn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'watchlistBtn';
-    btn.className = 'btn-secondary';
-    btn.style.marginLeft = '1rem';
-    btn.innerHTML = '<i class="fas fa-star"></i> Save to Watchlist';
-    btn.onclick = () => addToWatchlist(ticker);
-    // Place the button in the result box header or near the company name
-    const outlook = document.getElementById('outlook');
-    if (outlook) {
-      outlook.prepend(btn);
-    } else {
-      resultBox.prepend(btn);
-    }
-  } else {
-    btn.onclick = () => addToWatchlist(ticker);
+// Add event listener for the watchlist button
+document.addEventListener('DOMContentLoaded', function() {
+  const addToWatchlistBtn = document.getElementById('addToWatchlistBtn');
+  if (addToWatchlistBtn) {
+    addToWatchlistBtn.onclick = function() {
+      const ticker = tickerInput.value.trim().toUpperCase();
+      if (ticker) {
+        addToWatchlist(ticker);
+      }
+    };
   }
-}
-
-// Initial render
-renderWatchlist();
+  
+  // Initial render of watchlist
+  renderWatchlist();
+});
 
 // --- Notes/Tags Feature ---
 function getStockNotes() {
@@ -1044,8 +1049,6 @@ function initializeCharts(companies) {
   priceChart.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Price chart will be implemented with historical data</div>';
   volumeChart.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Volume chart will be implemented with historical data</div>';
 }
-
-
 
 // Initialize all UI elements
 function initializeUI() {
