@@ -156,6 +156,16 @@ def search():
             yf_stock = yf.Ticker(ticker)
             yf_info = yf_stock.info
             
+            # Debug print of Yahoo Finance data
+            print("\nYahoo Finance Data:")
+            print("Market Cap:", yf_info.get('marketCap'))
+            print("Ex-Dividend Date:", yf_info.get('exDividendDate'))
+            print("Full Time Employees:", yf_info.get('fullTimeEmployees'))
+            print("Fiscal Year Ends:", yf_info.get('fiscalYearEnds'))
+            print("Sector:", yf_info.get('sector'))
+            print("Industry:", yf_info.get('industry'))
+            print("\n")
+            
             # Update stock data with Yahoo Finance price information
             stock_data.update({
                 "last": yf_info.get('regularMarketPrice'),
@@ -163,7 +173,13 @@ def search():
                 "open": yf_info.get('regularMarketOpen'),
                 "high": yf_info.get('regularMarketDayHigh'),
                 "low": yf_info.get('regularMarketDayLow'),
-                "volume": yf_info.get('regularMarketVolume')
+                "volume": yf_info.get('regularMarketVolume'),
+                "marketCapIntraday": yf_info.get('marketCap'),
+                "exDividendDate": yf_info.get('exDividendDate'),
+                "fullTimeEmployees": yf_info.get('fullTimeEmployees'),
+                "fiscalYearEnds": yf_info.get('fiscalYearEnds'),
+                "sector": yf_info.get('sector'),
+                "industry": yf_info.get('industry')
             })
         except Exception as e:
             print("Error fetching Yahoo Finance data:", e)

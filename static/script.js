@@ -264,8 +264,10 @@ function initializeVolatilityChart(stock) {
   }
 }
 
-function createCompanyOutlook(company) {
+function createCompanyOutlook(company, stock) {
   console.log("Company data received:", company);
+  console.log("Stock data received:", stock);
+  
   // Clean up company name by removing class suffixes
   const cleanName = company.name ? company.name.replace(/ - Class [A-Z]$/, '') : 'N/A';
 
@@ -275,10 +277,20 @@ function createCompanyOutlook(company) {
     : '<span class="na-value">No description available</span>';
 
   // Try all possible fields for each key detail
-  const industry = company.industry || company.industryCode || 'N/A';
-  const sector = company.sector || company.sectorCode || 'N/A';
+  const industry = stock.industry || company.industry || company.industryCode || 'N/A';
+  const sector = stock.sector || company.sector || company.sectorCode || 'N/A';
   const website = company.website || company.url || 'N/A';
   const exchange = company.exchangeCode || company.exchange || 'N/A';
+
+  // Format market cap and ex-dividend date
+  const marketCap = stock.marketCapIntraday ? formatNumber(stock.marketCapIntraday) : 'N/A';
+  const exDividendDate = stock.exDividendDate ? new Date(stock.exDividendDate * 1000).toLocaleDateString() : 'N/A';
+  
+  // Format full time employees with commas
+  const fullTimeEmployees = stock.fullTimeEmployees ? stock.fullTimeEmployees.toLocaleString() : 'N/A';
+  
+  // Format fiscal year ends
+  const fiscalYearEnds = stock.fiscalYearEnds || 'N/A';
 
   return `
     <div class="company-outlook">
@@ -309,11 +321,10 @@ function createCompanyOutlook(company) {
                 <th>Exchange</th>
                 <td>${exchange}</td>
               </tr>
-                            <tr>
+              <tr>
                 <th>Start Date</th>
                 <td>${company.startDate || '<span class="na-value">N/A</span>'}</td>
               </tr>
-
               <tr>
                 <th>Industry</th>
                 <td>${industry}</td>
@@ -323,12 +334,24 @@ function createCompanyOutlook(company) {
                 <td>${sector}</td>
               </tr>
               <tr>
+                <th>Full Time Employees</th>
+                <td>${fullTimeEmployees}</td>
+              </tr>
+              <tr>
+                <th>Fiscal Year Ends</th>
+                <td>${fiscalYearEnds}</td>
+              </tr>
+              <tr>
+                <th>Market Cap (Intraday)</th>
+                <td>${marketCap}</td>
+              </tr>
+              <tr>
+                <th>Ex-Dividend Date</th>
+                <td>${exDividendDate}</td>
+              </tr>
+              <tr>
                 <th>Website</th>
-                <td>
-                  ${website !== 'N/A' ? 
-                    `<a href="${website}" target="_blank" rel="noopener noreferrer">${website}</a>` : 
-                    '<span class="na-value">N/A</span>'}
-                </td>
+                <td><a href="${website}" target="_blank" rel="noopener noreferrer">${website}</a></td>
               </tr>
             </tbody>
           </table>
@@ -381,7 +404,7 @@ stockForm.addEventListener('submit', async (e) => {
 
     if (response.ok) {
       resultBox.style.display = 'block';
-      document.getElementById('outlook').innerHTML = createCompanyOutlook(data.company);
+      document.getElementById('outlook').innerHTML = createCompanyOutlook(data.company, data.stock);
       document.getElementById('summary').innerHTML = createStockSummary(data.stock);
       
       // Wait for the DOM to update before initializing the chart
