@@ -147,8 +147,121 @@ function createStockSummary(stock) {
           <span>${formatNumber(stock.volume)}</span>
         </div>
       </div>
+
+      <div class="volatility-chart-container">
+        <canvas id="volatilityChart"></canvas>
+      </div>
     </div>
   `;
+}
+
+// Add this new function to initialize the volatility chart
+function initializeVolatilityChart(stock) {
+  try {
+    const ctx = document.getElementById('volatilityChart');
+    if (!ctx) {
+      console.error('Chart canvas element not found');
+      return;
+    }
+
+    // Destroy existing chart if it exists
+    if (window.volatilityChart instanceof Chart) {
+      window.volatilityChart.destroy();
+    }
+
+    // Validate stock data
+    if (!stock || typeof stock !== 'object') {
+      console.error('Invalid stock data:', stock);
+      return;
+    }
+
+    // Create price data
+    const priceData = [
+      { label: 'Open', value: stock.open },
+      { label: 'Low', value: stock.low },
+      { label: 'High', value: stock.high },
+      { label: 'Last', value: stock.last }
+    ].filter(item => item.value !== null && item.value !== undefined);
+
+    if (priceData.length === 0) {
+      console.error('No valid price data available');
+      return;
+    }
+
+    // Create volume data
+    const volumeData = stock.volume !== null && stock.volume !== undefined ? 
+      [{ label: 'Volume', value: stock.volume }] : [];
+
+    // Create the chart
+    window.volatilityChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: priceData.map(item => item.label),
+        datasets: [
+          {
+            label: 'Price ($)',
+            data: priceData.map(item => item.value),
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Volume',
+            data: volumeData.map(item => item.value),
+            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Price ($)'
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Volume'
+            },
+            grid: {
+              drawOnChartArea: false
+            }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Daily Stock Volatility'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.dataset.label || '';
+                const value = context.raw;
+                return `${label}: ${label === 'Volume' ? formatNumber(value) : formatCurrency(value)}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error initializing volatility chart:', error);
+  }
 }
 
 function createCompanyOutlook(company) {
@@ -196,6 +309,11 @@ function createCompanyOutlook(company) {
                 <th>Exchange</th>
                 <td>${exchange}</td>
               </tr>
+                            <tr>
+                <th>Start Date</th>
+                <td>${company.startDate || '<span class="na-value">N/A</span>'}</td>
+              </tr>
+
               <tr>
                 <th>Industry</th>
                 <td>${industry}</td>
@@ -250,7 +368,7 @@ stockForm.addEventListener('submit', async (e) => {
   
   const ticker = tickerInput.value.trim().toUpperCase();
   if (!ticker) {
-    showError('Please enter a stock ticker symbol');
+    showError('Please enter a ticker symbol');
     return;
   }
 
@@ -261,42 +379,24 @@ stockForm.addEventListener('submit', async (e) => {
     const response = await fetch(`/search?ticker=${ticker}`);
     const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to fetch stock data');
+    if (response.ok) {
+      resultBox.style.display = 'block';
+      document.getElementById('outlook').innerHTML = createCompanyOutlook(data.company);
+      document.getElementById('summary').innerHTML = createStockSummary(data.stock);
+      
+      // Wait for the DOM to update before initializing the chart
+      setTimeout(() => {
+        initializeVolatilityChart(data.stock);
+      }, 100);
+      
+      document.getElementById('history').innerHTML = createHistoryList([]);
+      await loadHistory();
+    } else {
+      showError(data.error || 'Failed to fetch stock data');
     }
-
-    // Update tab contents
-    document.getElementById('outlook').innerHTML = createCompanyOutlook(data.company);
-    document.getElementById('summary').innerHTML = createStockSummary(data.stock);
-    
-    // Show results
-    resultBox.style.display = 'block';
-    
-    // Load history
-    loadHistory();
-
-    // Add the button after rendering
-    setTimeout(() => {
-      addWatchlistButton(ticker);
-    }, 100);
-
-    // Render notes section
-    renderNotesSection(ticker);
-
-    // Save latest price after each search
-    setTimeout(() => {
-      try {
-        const summary = document.getElementById('summary');
-        if (summary) {
-          const match = summary.innerHTML.match(/\$([\d,.]+)/);
-          if (match) {
-            setLatestPrice(ticker, parseFloat(match[1].replace(/,/g, '')));
-          }
-        }
-      } catch {}
-    }, 200);
   } catch (error) {
-    showError(error.message);
+    showError('An error occurred while fetching data');
+    console.error('Error:', error);
   } finally {
     setLoading(false);
   }

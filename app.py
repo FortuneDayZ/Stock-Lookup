@@ -95,6 +95,7 @@ def search():
         print("Name:", company_data.get('name'))
         print("Ticker:", company_data.get('ticker'))
         print("Description:", company_data.get('description'))
+        print("Start Date:", company_data.get('startDate'))
         print("Industry:", company_data.get('industry'))
         print("Industry Code:", company_data.get('industryCode'))
         print("Sector:", company_data.get('sector'))
