@@ -1,21 +1,21 @@
 [
     {
-        "ticker": "GOOG",
-        "timestamp": "2025-06-16T20:00:00+00:00",
+        "ticker": "AAPL",
+        "timestamp": "2025-06-20T20:00:00+00:00",
         "lastSaleTimestamp": null,
         "quoteTimestamp": null,
-        "open": 175.905,
-        "high": 178.245,
-        "low": 175.82,
+        "open": 198.235,
+        "high": 201.7,
+        "low": 196.855,
         "mid": null,
-        "tngoLast": 177.94,
+        "tngoLast": 201.0,
         "last": null,
         "lastSize": null,
         "bidSize": null,
         "bidPrice": null,
         "askPrice": null,
         "askSize": null,
-        "volume": 18132529,
-        "prevClose": 175.88
+        "volume": 96813542,
+        "prevClose": 196.58
     }
 ]

@@ -148,120 +148,370 @@ function createStockSummary(stock) {
         </div>
       </div>
 
-      <div class="volatility-chart-container">
-        <canvas id="volatilityChart"></canvas>
+      <!-- Price History Chart Section -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <h3><i class="fas fa-chart-line"></i> Price History</h3>
+          <div class="timeframe-selector">
+            <button class="timeframe-btn active" data-period="1d">1D</button>
+            <button class="timeframe-btn" data-period="5d">5D</button>
+            <button class="timeframe-btn" data-period="1mo">1M</button>
+            <button class="timeframe-btn" data-period="6mo">6M</button>
+            <button class="timeframe-btn" data-period="1y">1Y</button>
+            <button class="timeframe-btn" data-period="5y">5Y</button>
+            <button class="timeframe-btn" data-period="max">MAX</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="priceHistoryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Daily Returns Chart Section -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <h3><i class="fas fa-chart-bar"></i> Daily Returns</h3>
+          <div class="timeframe-selector">
+            <button class="timeframe-btn active" data-period="1mo">1M</button>
+            <button class="timeframe-btn" data-period="3mo">3M</button>
+            <button class="timeframe-btn" data-period="6mo">6M</button>
+            <button class="timeframe-btn" data-period="1y">1Y</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="returnsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Beta and Risk Metrics Section -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <h3><i class="fas fa-shield-alt"></i> Risk Metrics</h3>
+        </div>
+        <div class="beta-container">
+          <div class="beta-loading">
+            <i class="fas fa-spinner fa-spin"></i> Calculating Beta...
+          </div>
+        </div>
       </div>
     </div>
   `;
 }
 
-// Add this new function to initialize the volatility chart
-function initializeVolatilityChart(stock) {
+// Initialize Price History Chart
+function initializePriceHistoryChart(ticker, period = '1y') {
   try {
-    const ctx = document.getElementById('volatilityChart');
+    const ctx = document.getElementById('priceHistoryChart');
     if (!ctx) {
-      console.error('Chart canvas element not found');
+      console.error('Price history chart canvas not found');
       return;
     }
 
     // Destroy existing chart if it exists
-    if (window.volatilityChart instanceof Chart) {
-      window.volatilityChart.destroy();
+    if (window.priceHistoryChart instanceof Chart) {
+      window.priceHistoryChart.destroy();
     }
 
-    // Validate stock data
-    if (!stock || typeof stock !== 'object') {
-      console.error('Invalid stock data:', stock);
-      return;
-    }
+    // Show loading state
+    ctx.style.display = 'none';
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'chart-loading';
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading price data...';
+    ctx.parentNode.appendChild(loadingDiv);
 
-    // Create price data
-    const priceData = [
-      { label: 'Open', value: stock.open },
-      { label: 'Low', value: stock.low },
-      { label: 'High', value: stock.high },
-      { label: 'Last', value: stock.last }
-    ].filter(item => item.value !== null && item.value !== undefined);
+    // Fetch historical data
+    fetch(`/historical?ticker=${ticker}&period=${period}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          throw new Error(data.error);
+        }
 
-    if (priceData.length === 0) {
-      console.error('No valid price data available');
-      return;
-    }
+        // Remove loading state
+        loadingDiv.remove();
+        ctx.style.display = 'block';
 
-    // Create volume data
-    const volumeData = stock.volume !== null && stock.volume !== undefined ? 
-      [{ label: 'Volume', value: stock.volume }] : [];
+        const dates = data.data.map(item => item.date);
+        const closes = data.data.map(item => item.close);
+        const volumes = data.data.map(item => item.volume);
 
-    // Create the chart
-    window.volatilityChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: priceData.map(item => item.label),
-        datasets: [
-          {
-            label: 'Price ($)',
-            data: priceData.map(item => item.value),
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1,
-            yAxisID: 'y'
+        // Create gradient for the line
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+        gradient.addColorStop(1, 'rgba(54, 162, 235, 0.1)');
+
+        window.priceHistoryChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: dates,
+            datasets: [{
+              label: 'Close Price',
+              data: closes,
+              borderColor: 'rgba(54, 162, 235, 1)',
+              backgroundColor: gradient,
+              borderWidth: 2,
+              fill: true,
+              tension: 0.1,
+              pointRadius: 0,
+              pointHoverRadius: 6,
+              pointHoverBackgroundColor: 'rgba(54, 162, 235, 1)',
+              pointHoverBorderColor: '#fff',
+              pointHoverBorderWidth: 2
+            }]
           },
-          {
-            label: 'Volume',
-            data: volumeData.map(item => item.value),
-            backgroundColor: 'rgba(255, 99, 132, 0.5)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1,
-            yAxisID: 'y1'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: {
-              display: true,
-              text: 'Price ($)'
-            }
-          },
-          y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: {
-              display: true,
-              text: 'Volume'
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index'
             },
-            grid: {
-              drawOnChartArea: false
-            }
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Daily Stock Volatility'
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const label = context.dataset.label || '';
-                const value = context.raw;
-                return `${label}: ${label === 'Volume' ? formatNumber(value) : formatCurrency(value)}`;
+            scales: {
+              x: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Date'
+                },
+                ticks: {
+                  maxTicksLimit: 10
+                }
+              },
+              y: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Price ($)'
+                },
+                ticks: {
+                  callback: function(value) {
+                    return '$' + value.toFixed(2);
+                  }
+                }
+              }
+            },
+            plugins: {
+              title: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return 'Price: $' + context.parsed.y.toFixed(2);
+                  }
+                }
               }
             }
           }
-        }
-      }
-    });
+        });
+      })
+      .catch(error => {
+        console.error('Error loading price history:', error);
+        loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error loading data';
+      });
   } catch (error) {
-    console.error('Error initializing volatility chart:', error);
+    console.error('Error initializing price history chart:', error);
   }
+}
+
+// Initialize Daily Returns Chart
+function initializeReturnsChart(ticker, period = '1y') {
+  try {
+    const ctx = document.getElementById('returnsChart');
+    if (!ctx) {
+      console.error('Returns chart canvas not found');
+      return;
+    }
+
+    // Destroy existing chart if it exists
+    if (window.returnsChart instanceof Chart) {
+      window.returnsChart.destroy();
+    }
+
+    // Show loading state
+    ctx.style.display = 'none';
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'chart-loading';
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading returns data...';
+    ctx.parentNode.appendChild(loadingDiv);
+
+    // Fetch returns data
+    fetch(`/returns?ticker=${ticker}&period=${period}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Remove loading state
+        loadingDiv.remove();
+        ctx.style.display = 'block';
+
+        const dates = data.data.map(item => item.date);
+        const returns = data.data.map(item => item.return);
+
+        // Color bars based on positive/negative returns
+        const colors = returns.map(ret => ret >= 0 ? 'rgba(75, 192, 75, 0.8)' : 'rgba(255, 99, 132, 0.8)');
+
+        window.returnsChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: dates,
+            datasets: [{
+              label: 'Daily Return (%)',
+              data: returns,
+              backgroundColor: colors,
+              borderColor: colors.map(color => color.replace('0.8', '1')),
+              borderWidth: 1,
+              borderRadius: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index'
+            },
+            scales: {
+              x: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Date'
+                },
+                ticks: {
+                  maxTicksLimit: 15
+                }
+              },
+              y: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Return (%)'
+                },
+                ticks: {
+                  callback: function(value) {
+                    return value.toFixed(2) + '%';
+                  }
+                }
+              }
+            },
+            plugins: {
+              title: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return 'Return: ' + context.parsed.y.toFixed(2) + '%';
+                  }
+                }
+              }
+            }
+          }
+        });
+      })
+      .catch(error => {
+        console.error('Error loading returns data:', error);
+        loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error loading data';
+      });
+  } catch (error) {
+    console.error('Error initializing returns chart:', error);
+  }
+}
+
+// Initialize Beta Calculation
+function initializeBetaCalculation(ticker) {
+  try {
+    const betaContainer = document.querySelector('.beta-container');
+    if (!betaContainer) {
+      console.error('Beta container not found');
+      return;
+    }
+
+    // Fetch beta data
+    fetch(`/beta?ticker=${ticker}&period=1y`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        const riskClass = data.risk_level.toLowerCase();
+        const riskColor = riskClass === 'high' ? '#ff6b6b' : riskClass === 'medium' ? '#ffd93d' : '#6bcf7f';
+
+        betaContainer.innerHTML = `
+          <div class="beta-metrics">
+            <div class="beta-item">
+              <div class="beta-label">Beta Value</div>
+              <div class="beta-value" style="color: ${riskColor}">${data.beta}</div>
+              <div class="beta-description">
+                ${data.beta > 1 ? 'More volatile than market' : data.beta < 1 ? 'Less volatile than market' : 'Same volatility as market'}
+              </div>
+            </div>
+            <div class="beta-item">
+              <div class="beta-label">Risk Level</div>
+              <div class="beta-value" style="color: ${riskColor}">${data.risk_level}</div>
+              <div class="beta-description">
+                Based on beta volatility
+              </div>
+            </div>
+            <div class="beta-item">
+              <div class="beta-label">Stock Volatility</div>
+              <div class="beta-value">${data.stock_volatility}%</div>
+              <div class="beta-description">
+                Annualized volatility
+              </div>
+            </div>
+            <div class="beta-item">
+              <div class="beta-label">Market Volatility</div>
+              <div class="beta-value">${data.market_volatility}%</div>
+              <div class="beta-description">
+                SPY annualized volatility
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .catch(error => {
+        console.error('Error loading beta data:', error);
+        betaContainer.innerHTML = `
+          <div class="beta-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            Error calculating beta: ${error.message}
+          </div>
+        `;
+      });
+  } catch (error) {
+    console.error('Error initializing beta calculation:', error);
+  }
+}
+
+// Handle timeframe button clicks
+function initializeTimeframeButtons() {
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('timeframe-btn')) {
+      const button = e.target;
+      const chartSection = button.closest('.chart-section');
+      const period = button.dataset.period;
+      
+      // Update active button
+      chartSection.querySelectorAll('.timeframe-btn').forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      
+      // Get current ticker from the page
+      const currentTicker = document.getElementById('ticker').value;
+      if (!currentTicker) return;
+      
+      // Determine which chart to update
+      if (chartSection.querySelector('#priceHistoryChart')) {
+        initializePriceHistoryChart(currentTicker, period);
+      } else if (chartSection.querySelector('#returnsChart')) {
+        initializeReturnsChart(currentTicker, period);
+      }
+    }
+  });
 }
 
 function createCompanyOutlook(company, stock) {
@@ -401,7 +651,10 @@ stockForm.addEventListener('submit', async (e) => {
       
       // Wait for the DOM to update before initializing the chart
       setTimeout(() => {
-        initializeVolatilityChart(data.stock);
+        initializePriceHistoryChart(ticker);
+        initializeReturnsChart(ticker);
+        initializeBetaCalculation(ticker);
+        initializeTimeframeButtons();
       }, 100);
       
       document.getElementById('history').innerHTML = createHistoryList([]);
@@ -542,7 +795,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- Notes/Tags Feature ---
 function getStockNotes() {
-  return JSON.parse(localStorage.getItem('stockNotes') || '{}');
+  const notes = localStorage.getItem('stockNotes');
+  return notes ? JSON.parse(notes) : {};
 }
 
 function setStockNotes(notesObj) {
@@ -551,53 +805,64 @@ function setStockNotes(notesObj) {
 
 function getNoteForTicker(ticker) {
   const notes = getStockNotes();
-  return notes[ticker] || '';
+  return notes[ticker] || [];
 }
 
 function saveNoteForTicker(ticker, note) {
   const notes = getStockNotes();
-  notes[ticker] = note;
+  if (!notes[ticker]) {
+    notes[ticker] = [];
+  }
+  notes[ticker].push(note);
   setStockNotes(notes);
 }
 
-function deleteNoteForTicker(ticker) {
+function deleteNoteForTicker(ticker, index) {
   const notes = getStockNotes();
-  delete notes[ticker];
-  setStockNotes(notes);
+  if (notes[ticker]) {
+    notes[ticker].splice(index, 1);
+    if (notes[ticker].length === 0) {
+      delete notes[ticker];
+    }
+    setStockNotes(notes);
+  }
 }
 
 function renderNotesSection(ticker) {
-  let notesBox = document.getElementById('notesBox');
-  if (!notesBox) {
-    notesBox = document.createElement('div');
-    notesBox.id = 'notesBox';
-    notesBox.style.marginTop = '1.5rem';
-    notesBox.style.background = 'var(--hover-color)';
-    notesBox.style.padding = '1rem';
-    notesBox.style.borderRadius = '0.5rem';
-    notesBox.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)';
-    resultBox.appendChild(notesBox);
+  const notes = getStockNotes();
+  const tickerNotes = notes[ticker] || [];
+  
+  if (tickerNotes.length === 0) {
+    notesContainer.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-sticky-note"></i>
+        <p>No notes yet. Click the + button to add a note.</p>
+      </div>
+    `;
+    return;
   }
-  notesBox.innerHTML = `
-    <h3 style="margin-bottom:0.5rem;">Personal Notes / Tags</h3>
-    <textarea id="stockNoteInput" rows="3" style="width:100%;border-radius:0.4rem;padding:0.5rem;border:1px solid var(--border-color);resize:vertical;">${getNoteForTicker(ticker)}</textarea>
-    <div style="margin-top:0.5rem;display:flex;gap:0.5rem;">
-      <button id="saveNoteBtn" class="btn-primary" style="padding:0.4rem 1.2rem;">Save</button>
-      <button id="deleteNoteBtn" class="btn-secondary" style="padding:0.4rem 1.2rem;">Delete</button>
+
+  notesContainer.innerHTML = tickerNotes.map((note, index) => `
+    <div class="note-item">
+      <div class="note-header">
+        <h4 class="note-title">${note.title}</h4>
+        <span class="note-date">${formatTimestamp(note.timestamp)}</span>
+      </div>
+      <div class="note-content">${note.content}</div>
+      <button class="delete-note" data-index="${index}" title="Delete note">
+        <i class="fas fa-trash"></i>
+      </button>
     </div>
-    <div id="noteSavedMsg" style="color:var(--success-color);margin-top:0.5rem;display:none;">Saved!</div>
-  `;
-  document.getElementById('saveNoteBtn').onclick = () => {
-    const note = document.getElementById('stockNoteInput').value;
-    saveNoteForTicker(ticker, note);
-    const msg = document.getElementById('noteSavedMsg');
-    msg.style.display = 'block';
-    setTimeout(() => { msg.style.display = 'none'; }, 1200);
-  };
-  document.getElementById('deleteNoteBtn').onclick = () => {
-    deleteNoteForTicker(ticker);
-    document.getElementById('stockNoteInput').value = '';
-  };
+  `).join('');
+
+  // Add event listeners to delete buttons
+  notesContainer.querySelectorAll('.delete-note').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const index = parseInt(e.target.closest('.delete-note').dataset.index);
+      deleteNoteForTicker(ticker, index);
+      renderNotesSection(ticker);
+    });
+  });
 }
 
 // --- Portfolio Tracker Feature ---
@@ -1267,4 +1532,110 @@ function calculateBreakeven() {
   } else {
     document.getElementById('breakevenResult').style.display = 'none';
   }
+}
+
+// Note handling
+const addNoteBtn = document.getElementById('addNoteBtn');
+const notesContainer = document.getElementById('notesContainer');
+
+addNoteBtn.addEventListener('click', () => {
+  const currentTicker = tickerInput.value.trim();
+  if (!currentTicker) {
+    showError('Please search for a stock first before adding a note');
+    return;
+  }
+
+  // Create and show the note modal
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Note for ${currentTicker}</h3>
+        <button class="close-modal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="noteTitle">Title</label>
+          <input type="text" id="noteTitle" placeholder="Enter note title" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="noteContent">Note</label>
+          <textarea id="noteContent" placeholder="Enter your note" class="form-input" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary close-modal">Cancel</button>
+        <button class="btn-primary" id="saveNoteBtn">Save Note</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Add event listeners for the modal
+  const closeModal = () => {
+    modal.remove();
+  };
+
+  modal.querySelectorAll('.close-modal').forEach(btn => {
+    btn.addEventListener('click', closeModal);
+  });
+
+  modal.querySelector('#saveNoteBtn').addEventListener('click', () => {
+    const title = modal.querySelector('#noteTitle').value.trim();
+    const content = modal.querySelector('#noteContent').value.trim();
+
+    if (!title || !content) {
+      showError('Please enter both title and note content');
+      return;
+    }
+
+    const note = {
+      title,
+      content,
+      timestamp: new Date().toISOString()
+    };
+
+    saveNoteForTicker(currentTicker, note);
+    renderNotesSection(currentTicker);
+    closeModal();
+  });
+});
+
+function renderNotesSection(ticker) {
+  const notes = getStockNotes();
+  const tickerNotes = notes[ticker] || [];
+  
+  if (tickerNotes.length === 0) {
+    notesContainer.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-sticky-note"></i>
+        <p>No notes yet. Click the + button to add a note.</p>
+      </div>
+    `;
+    return;
+  }
+
+  notesContainer.innerHTML = tickerNotes.map((note, index) => `
+    <div class="note-item">
+      <div class="note-header">
+        <h4 class="note-title">${note.title}</h4>
+        <span class="note-date">${formatTimestamp(note.timestamp)}</span>
+      </div>
+      <div class="note-content">${note.content}</div>
+      <button class="delete-note" data-index="${index}" title="Delete note">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+
+  // Add event listeners to delete buttons
+  notesContainer.querySelectorAll('.delete-note').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const index = parseInt(e.target.closest('.delete-note').dataset.index);
+      deleteNoteForTicker(ticker, index);
+      renderNotesSection(ticker);
+    });
+  });
 }

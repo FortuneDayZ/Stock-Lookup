@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime, timedelta, UTC
 import json
 import yfinance as yf
+import pandas as pd
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -254,6 +255,154 @@ def history():
     except Exception as e:
         print("Error loading history:", e)
         return jsonify([])
+
+# -----------------------------------------------------------
+# Route: Historical Price Data API
+# -----------------------------------------------------------
+
+@app.route('/historical')
+def historical():
+    ticker = request.args.get("ticker", "").upper().strip()
+    period = request.args.get("period", "1y")  # 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
+    
+    if not ticker:
+        return jsonify({"error": "Ticker is required"}), 400
+    
+    try:
+        yf_stock = yf.Ticker(ticker)
+        hist = yf_stock.history(period=period)
+        
+        if hist.empty:
+            return jsonify({"error": "No historical data available"}), 404
+        
+        # Convert to list of dictionaries for JSON serialization
+        historical_data = []
+        for date, row in hist.iterrows():
+            historical_data.append({
+                "date": date.strftime('%Y-%m-%d'),
+                "open": float(row['Open']) if not pd.isna(row['Open']) else None,
+                "high": float(row['High']) if not pd.isna(row['High']) else None,
+                "low": float(row['Low']) if not pd.isna(row['Low']) else None,
+                "close": float(row['Close']) if not pd.isna(row['Close']) else None,
+                "volume": int(row['Volume']) if not pd.isna(row['Volume']) else None
+            })
+        
+        return jsonify({
+            "ticker": ticker,
+            "period": period,
+            "data": historical_data
+        })
+        
+    except Exception as e:
+        print("Error fetching historical data:", e)
+        return jsonify({"error": "Failed to fetch historical data"}), 500
+
+# -----------------------------------------------------------
+# Route: Daily Returns API
+# -----------------------------------------------------------
+
+@app.route('/returns')
+def returns():
+    ticker = request.args.get("ticker", "").upper().strip()
+    period = request.args.get("period", "1y")
+    
+    if not ticker:
+        return jsonify({"error": "Ticker is required"}), 400
+    
+    try:
+        yf_stock = yf.Ticker(ticker)
+        hist = yf_stock.history(period=period)
+        
+        if hist.empty or len(hist) < 2:
+            return jsonify({"error": "Insufficient historical data"}), 404
+        
+        # Calculate daily returns
+        returns_data = []
+        for i in range(1, len(hist)):
+            prev_close = hist.iloc[i-1]['Close']
+            curr_close = hist.iloc[i]['Close']
+            
+            if prev_close > 0:
+                daily_return = ((curr_close - prev_close) / prev_close) * 100
+            else:
+                daily_return = 0
+            
+            returns_data.append({
+                "date": hist.index[i].strftime('%Y-%m-%d'),
+                "return": round(daily_return, 2),
+                "close": float(curr_close) if not pd.isna(curr_close) else None
+            })
+        
+        return jsonify({
+            "ticker": ticker,
+            "period": period,
+            "data": returns_data
+        })
+        
+    except Exception as e:
+        print("Error calculating returns:", e)
+        return jsonify({"error": "Failed to calculate returns"}), 500
+
+# -----------------------------------------------------------
+# Route: Beta Calculation API
+# -----------------------------------------------------------
+
+@app.route('/beta')
+def beta():
+    ticker = request.args.get("ticker", "").upper().strip()
+    period = request.args.get("period", "1y")
+    
+    if not ticker:
+        return jsonify({"error": "Ticker is required"}), 400
+    
+    try:
+        # Get stock data
+        yf_stock = yf.Ticker(ticker)
+        stock_hist = yf_stock.history(period=period)
+        
+        if stock_hist.empty:
+            return jsonify({"error": "No stock data available"}), 404
+        
+        # Get market data (using SPY as market proxy)
+        spy = yf.Ticker("SPY")
+        market_hist = spy.history(period=period)
+        
+        if market_hist.empty:
+            return jsonify({"error": "No market data available"}), 404
+        
+        # Align dates
+        common_dates = stock_hist.index.intersection(market_hist.index)
+        if len(common_dates) < 30:  # Need at least 30 days for meaningful beta
+            return jsonify({"error": "Insufficient data for beta calculation"}), 404
+        
+        stock_returns = stock_hist.loc[common_dates]['Close'].pct_change().dropna()
+        market_returns = market_hist.loc[common_dates]['Close'].pct_change().dropna()
+        
+        # Calculate beta using covariance method
+        covariance = stock_returns.cov(market_returns)
+        market_variance = market_returns.var()
+        
+        if market_variance == 0:
+            return jsonify({"error": "Cannot calculate beta: market variance is zero"}), 500
+        
+        beta = covariance / market_variance
+        
+        # Calculate additional metrics
+        stock_volatility = stock_returns.std() * (252 ** 0.5)  # Annualized volatility
+        market_volatility = market_returns.std() * (252 ** 0.5)
+        
+        return jsonify({
+            "ticker": ticker,
+            "period": period,
+            "beta": round(beta, 3),
+            "stock_volatility": round(stock_volatility * 100, 2),  # As percentage
+            "market_volatility": round(market_volatility * 100, 2),
+            "risk_level": "High" if abs(beta) > 1.5 else "Medium" if abs(beta) > 0.8 else "Low"
+        })
+        
+    except Exception as e:
+        print("Error calculating beta:", e)
+        return jsonify({"error": "Failed to calculate beta"}), 500
 
 # -----------------------------------------------------------
 # Entry Point: Run Flask development server
