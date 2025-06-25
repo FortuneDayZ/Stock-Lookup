@@ -3,7 +3,8 @@ import requests
 import sqlite3
 from datetime import datetime, timedelta, UTC
 import json
-import yfinance as yf
+import defeatbeta_api
+from defeatbeta_api.data.ticker import Ticker
 import pandas as pd
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -151,45 +152,93 @@ def search():
                 })
 
         # -----------------------------------------------------------
-        # Step 2: Get price data from Yahoo Finance
+        # Step 2: Get price data from DefeatBeta API (replacing Yahoo Finance)
         # -----------------------------------------------------------
         try:
-            yf_stock = yf.Ticker(ticker)
-            yf_info = yf_stock.info
+            defeat_stock = Ticker(ticker)
             
-            # Debug print of Yahoo Finance data
-            print("\nYahoo Finance Data:")
-            print("Market Cap:", yf_info.get('marketCap'))
-            print("Ex-Dividend Date:", yf_info.get('exDividendDate'))
-            print("Full Time Employees:", yf_info.get('fullTimeEmployees'))
-            print("Fiscal Year Ends:", yf_info.get('fiscalYearEnds'))
-            print("Sector:", yf_info.get('sector'))
-            print("Industry:", yf_info.get('industry'))
-            print("\n")
+            # Get comprehensive company summary data
+            try:
+                summary_data = defeat_stock.summary()
+                if not summary_data.empty:
+                    summary_row = summary_data.iloc[0]
+                    # Update company data with DefeatBeta summary information
+                    company_data.update({
+                        "market_cap": float(summary_row['market_cap']) if not pd.isna(summary_row['market_cap']) else None,
+                        "enterprise_value": float(summary_row['enterprise_value']) if not pd.isna(summary_row['enterprise_value']) else None,
+                        "shares_outstanding": float(summary_row['shares_outstanding']) if not pd.isna(summary_row['shares_outstanding']) else None,
+                        "beta": float(summary_row['beta']) if not pd.isna(summary_row['beta']) else None,
+                        "trailing_pe": float(summary_row['trailing_pe']) if not pd.isna(summary_row['trailing_pe']) else None,
+                        "forward_pe": float(summary_row['forward_pe']) if not pd.isna(summary_row['forward_pe']) else None,
+                        "trailing_eps": float(summary_row['tailing_eps']) if not pd.isna(summary_row['tailing_eps']) else None,
+                        "forward_eps": float(summary_row['forward_eps']) if not pd.isna(summary_row['forward_eps']) else None,
+                        "peg_ratio": float(summary_row['peg_ratio']) if not pd.isna(summary_row['peg_ratio']) else None,
+                        "currency": summary_row['currency'] if not pd.isna(summary_row['currency']) else None
+                    })
+            except Exception as e:
+                print("Error fetching DefeatBeta summary data:", e)
             
-            # Update stock data with Yahoo Finance price information
-            stock_data.update({
-                "last": yf_info.get('regularMarketPrice'),
-                "prevClose": yf_info.get('regularMarketPreviousClose'),
-                "open": yf_info.get('regularMarketOpen'),
-                "high": yf_info.get('regularMarketDayHigh'),
-                "low": yf_info.get('regularMarketDayLow'),
-                "volume": yf_info.get('regularMarketVolume'),
-                "marketCapIntraday": yf_info.get('marketCap'),
-                "exDividendDate": yf_info.get('exDividendDate'),
-                "fullTimeEmployees": yf_info.get('fullTimeEmployees'),
-                "fiscalYearEnds": yf_info.get('fiscalYearEnds'),
-                "sector": yf_info.get('sector'),
-                "industry": yf_info.get('industry')
-            })
+            # Get additional company information
+            try:
+                company_info = defeat_stock.info()
+                if company_info is not None and not company_info.empty:
+                    info_row = company_info.iloc[0]
+                    company_data.update({
+                        "industry": info_row.get('industry') if not pd.isna(info_row.get('industry')) else company_data.get('industry'),
+                        "sector": info_row.get('sector') if not pd.isna(info_row.get('sector')) else company_data.get('sector'),
+                        "full_time_employees": int(info_row.get('full_time_employees')) if not pd.isna(info_row.get('full_time_employees')) else None,
+                        "website": info_row.get('web_site') if not pd.isna(info_row.get('web_site')) else company_data.get('website'),
+                        "long_business_summary": info_row.get('long_business_summary') if not pd.isna(info_row.get('long_business_summary')) else None,
+                        "address": info_row.get('address') if not pd.isna(info_row.get('address')) else None,
+                        "city": info_row.get('city') if not pd.isna(info_row.get('city')) else None,
+                        "country": info_row.get('country') if not pd.isna(info_row.get('country')) else None,
+                        "phone": info_row.get('phone') if not pd.isna(info_row.get('phone')) else None
+                    })
+            except Exception as e:
+                print("Error fetching DefeatBeta info:", e)
+            
+            price_data = defeat_stock.price()
+            
+            if not price_data.empty:
+                # Get the most recent price data (last close)
+                latest_price = price_data.iloc[-1]
+                # Get previous day's close for change calculation
+                if len(price_data) > 1:
+                    prev_close = price_data.iloc[-2]['close']
+                else:
+                    prev_close = latest_price['close']
+                # Update stock data with DefeatBeta price information
+                stock_data.update({
+                    "last_close": float(latest_price['close']) if not pd.isna(latest_price['close']) else None,
+                    "prevClose": float(prev_close) if not pd.isna(prev_close) else None,
+                    "open": float(latest_price['open']) if not pd.isna(latest_price['open']) else None,
+                    "high": float(latest_price['high']) if not pd.isna(latest_price['high']) else None,
+                    "low": float(latest_price['low']) if not pd.isna(latest_price['low']) else None,
+                    "volume": int(latest_price['volume']) if not pd.isna(latest_price['volume']) else None
+                })
+                # Try to get additional company info from quarterly income statement
+                try:
+                    income_stmt = defeat_stock.quarterly_income_statement()
+                    if income_stmt is not None and hasattr(income_stmt, 'data') and not income_stmt.data.empty:
+                        # Get TTM data from the income statement
+                        ttm_data = income_stmt.data.set_index('Breakdown')['TTM']
+                        
+                        # Extract key financial metrics
+                        stock_data.update({
+                            "revenue": ttm_data.get("Total Revenue"),
+                            "netIncome": ttm_data.get("Net Income Common Stockholders"),
+                            "eps": ttm_data.get("Diluted EPS")
+                        })
+                except Exception as e:
+                    print("Error fetching income statement data:", e)
         except Exception as e:
-            print("Error fetching Yahoo Finance data:", e)
-            # Keep existing price data if Yahoo Finance fails
+            print("Error fetching DefeatBeta data:", e)
+            # Keep existing price data if DefeatBeta fails
 
         # -----------------------------------------------------------
         # Step 3: Compute change and change_percent if valid
         # -----------------------------------------------------------
-        last = stock_data.get("last")
+        last = stock_data.get("last_close")
         prev_close = stock_data.get("prevClose")
 
         if last is not None and prev_close is not None:
@@ -201,6 +250,47 @@ def search():
 
         stock_data["change"] = change
         stock_data["change_percent"] = change_percent
+
+        # -----------------------------------------------------------
+        # Step 5: Calculate annualized volatility and add to stock_data
+        # -----------------------------------------------------------
+        try:
+            defeat_stock = Ticker(ticker)
+            price_data = defeat_stock.price()
+            if not price_data.empty and len(price_data) > 1:
+                stock_returns = price_data['close'].pct_change().dropna()
+                stock_volatility = stock_returns.std() * (252 ** 0.5)
+                stock_data['annualized_volatility'] = round(stock_volatility * 100, 2)
+            else:
+                stock_data['annualized_volatility'] = None
+        except Exception as e:
+            print('Error calculating annualized volatility in /search:', e)
+            stock_data['annualized_volatility'] = None
+
+        # -----------------------------------------------------------
+        # Step 6: Calculate ATR (14-day) and Historical Volatility (30-day)
+        # -----------------------------------------------------------
+        try:
+            if not price_data.empty and len(price_data) > 14:
+                price_data['prev_close'] = price_data['close'].shift(1)
+                price_data['tr'] = price_data.apply(
+                    lambda row: max(
+                        row['high'] - row['low'],
+                        abs(row['high'] - row['prev_close']) if not pd.isna(row['prev_close']) else 0,
+                        abs(row['low'] - row['prev_close']) if not pd.isna(row['prev_close']) else 0
+                    ), axis=1
+                )
+                atr_14d = price_data['tr'].rolling(window=14).mean().iloc[-1]
+                stock_data['atr_14d'] = round(atr_14d, 2) if not pd.isna(atr_14d) else None
+                hv_30d = price_data['close'].pct_change().rolling(window=30).std().iloc[-1] * 100
+                stock_data['hv_30d'] = round(hv_30d, 2) if not pd.isna(hv_30d) else None
+            else:
+                stock_data['atr_14d'] = None
+                stock_data['hv_30d'] = None
+        except Exception as e:
+            print('Error calculating ATR/HV in /search:', e)
+            stock_data['atr_14d'] = None
+            stock_data['hv_30d'] = None
 
         # Get current timestamp for API call using timezone-aware datetime
         api_timestamp = datetime.now(UTC).isoformat()
@@ -269,22 +359,35 @@ def historical():
         return jsonify({"error": "Ticker is required"}), 400
     
     try:
-        yf_stock = yf.Ticker(ticker)
-        hist = yf_stock.history(period=period)
+        defeat_stock = Ticker(ticker)
+        price_data = defeat_stock.price()
         
-        if hist.empty:
+        if price_data.empty:
             return jsonify({"error": "No historical data available"}), 404
+        
+        # Convert period to number of days for filtering
+        period_days = {
+            "1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180,
+            "1y": 365, "2y": 730, "5y": 1825, "10y": 3650, "ytd": 365, "max": 3650
+        }
+        
+        days_to_include = period_days.get(period, 365)
+        
+        # Filter data to include only the specified period
+        # Get the most recent data up to the specified period
+        if len(price_data) > days_to_include:
+            price_data = price_data.tail(days_to_include)
         
         # Convert to list of dictionaries for JSON serialization
         historical_data = []
-        for date, row in hist.iterrows():
+        for _, row in price_data.iterrows():
             historical_data.append({
-                "date": date.strftime('%Y-%m-%d'),
-                "open": float(row['Open']) if not pd.isna(row['Open']) else None,
-                "high": float(row['High']) if not pd.isna(row['High']) else None,
-                "low": float(row['Low']) if not pd.isna(row['Low']) else None,
-                "close": float(row['Close']) if not pd.isna(row['Close']) else None,
-                "volume": int(row['Volume']) if not pd.isna(row['Volume']) else None
+                "date": row['report_date'].strftime('%Y-%m-%d') if hasattr(row['report_date'], 'strftime') else str(row['report_date']),
+                "open": float(row['open']) if not pd.isna(row['open']) else None,
+                "high": float(row['high']) if not pd.isna(row['high']) else None,
+                "low": float(row['low']) if not pd.isna(row['low']) else None,
+                "close": float(row['close']) if not pd.isna(row['close']) else None,
+                "volume": int(row['volume']) if not pd.isna(row['volume']) else None
             })
         
         return jsonify({
@@ -310,17 +413,29 @@ def returns():
         return jsonify({"error": "Ticker is required"}), 400
     
     try:
-        yf_stock = yf.Ticker(ticker)
-        hist = yf_stock.history(period=period)
+        defeat_stock = Ticker(ticker)
+        price_data = defeat_stock.price()
         
-        if hist.empty or len(hist) < 2:
+        if price_data.empty or len(price_data) < 2:
             return jsonify({"error": "Insufficient historical data"}), 404
+        
+        # Convert period to number of days for filtering
+        period_days = {
+            "1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180,
+            "1y": 365, "2y": 730, "5y": 1825, "10y": 3650, "ytd": 365, "max": 3650
+        }
+        
+        days_to_include = period_days.get(period, 365)
+        
+        # Filter data to include only the specified period
+        if len(price_data) > days_to_include:
+            price_data = price_data.tail(days_to_include)
         
         # Calculate daily returns
         returns_data = []
-        for i in range(1, len(hist)):
-            prev_close = hist.iloc[i-1]['Close']
-            curr_close = hist.iloc[i]['Close']
+        for i in range(1, len(price_data)):
+            prev_close = price_data.iloc[i-1]['close']
+            curr_close = price_data.iloc[i]['close']
             
             if prev_close > 0:
                 daily_return = ((curr_close - prev_close) / prev_close) * 100
@@ -328,7 +443,7 @@ def returns():
                 daily_return = 0
             
             returns_data.append({
-                "date": hist.index[i].strftime('%Y-%m-%d'),
+                "date": price_data.iloc[i]['report_date'].strftime('%Y-%m-%d') if hasattr(price_data.iloc[i]['report_date'], 'strftime') else str(price_data.iloc[i]['report_date']),
                 "return": round(daily_return, 2),
                 "close": float(curr_close) if not pd.isna(curr_close) else None
             })
@@ -356,29 +471,47 @@ def beta():
         return jsonify({"error": "Ticker is required"}), 400
     
     try:
-        # Get stock data
-        yf_stock = yf.Ticker(ticker)
-        stock_hist = yf_stock.history(period=period)
+        defeat_stock = Ticker(ticker)
+        stock_price_data = defeat_stock.price()
         
-        if stock_hist.empty:
+        if stock_price_data.empty:
             return jsonify({"error": "No stock data available"}), 404
         
-        # Get market data (using SPY as market proxy)
-        spy = yf.Ticker("SPY")
-        market_hist = spy.history(period=period)
+        spy_stock = Ticker("SPY")
+        market_price_data = spy_stock.price()
         
-        if market_hist.empty:
+        if market_price_data.empty:
             return jsonify({"error": "No market data available"}), 404
         
-        # Align dates
-        common_dates = stock_hist.index.intersection(market_hist.index)
-        if len(common_dates) < 30:  # Need at least 30 days for meaningful beta
+        period_days = {
+            "1d": 1, "5d": 5, "1mo": 30, "3mo": 90, "6mo": 180,
+            "1y": 365, "2y": 730, "5y": 1825, "10y": 3650, "ytd": 365, "max": 3650
+        }
+        
+        days_to_include = period_days.get(period, 365)
+        
+        if len(stock_price_data) > days_to_include:
+            stock_price_data = stock_price_data.tail(days_to_include)
+        if len(market_price_data) > days_to_include:
+            market_price_data = market_price_data.tail(days_to_include)
+        
+        stock_dates = set(stock_price_data['report_date'])
+        market_dates = set(market_price_data['report_date'])
+        common_dates = sorted(stock_dates.intersection(market_dates))
+        
+        if len(common_dates) < 30:
             return jsonify({"error": "Insufficient data for beta calculation"}), 404
         
-        stock_returns = stock_hist.loc[common_dates]['Close'].pct_change().dropna()
-        market_returns = market_hist.loc[common_dates]['Close'].pct_change().dropna()
+        stock_filtered = stock_price_data[stock_price_data['report_date'].isin(common_dates)].sort_values('report_date')
+        market_filtered = market_price_data[market_price_data['report_date'].isin(common_dates)].sort_values('report_date')
         
-        # Calculate beta using covariance method
+        stock_returns = stock_filtered['close'].pct_change().dropna()
+        market_returns = market_filtered['close'].pct_change().dropna()
+        
+        min_len = min(len(stock_returns), len(market_returns))
+        stock_returns = stock_returns.iloc[-min_len:]
+        market_returns = market_returns.iloc[-min_len:]
+        
         covariance = stock_returns.cov(market_returns)
         market_variance = market_returns.var()
         
@@ -387,15 +520,14 @@ def beta():
         
         beta = covariance / market_variance
         
-        # Calculate additional metrics
-        stock_volatility = stock_returns.std() * (252 ** 0.5)  # Annualized volatility
+        stock_volatility = stock_returns.std() * (252 ** 0.5)
         market_volatility = market_returns.std() * (252 ** 0.5)
         
         return jsonify({
             "ticker": ticker,
             "period": period,
             "beta": round(beta, 3),
-            "stock_volatility": round(stock_volatility * 100, 2),  # As percentage
+            "annualized_volatility": round(stock_volatility * 100, 2),
             "market_volatility": round(market_volatility * 100, 2),
             "risk_level": "High" if abs(beta) > 1.5 else "Medium" if abs(beta) > 0.8 else "Low"
         })

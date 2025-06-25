@@ -110,8 +110,8 @@ function createStockSummary(stock) {
   const changeIcon = stock.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
   
   // Format the last price with proper styling
-  const lastPrice = stock.last !== null && stock.last !== undefined ? 
-    formatCurrency(stock.last) : 
+  const lastPrice = stock.last_close !== null && stock.last_close !== undefined ? 
+    formatCurrency(stock.last_close) : 
     '<span class="na-value">N/A</span>';
   
   // Format the change with proper styling
@@ -123,6 +123,7 @@ function createStockSummary(stock) {
     <div class="stock-summary">
       <div class="price-section">
         <h2>${lastPrice}</h2>
+        <div class="price-label">Last Close</div>
         <div class="change ${changeClass}">
           <i class="fas ${changeIcon}"></i>
           ${changeDisplay}
@@ -190,7 +191,7 @@ function createStockSummary(stock) {
         </div>
         <div class="beta-container">
           <div class="beta-loading">
-            <i class="fas fa-spinner fa-spin"></i> Calculating Beta...
+            <i class="fas fa-spinner fa-spin"></i> Loading risk metrics...
           </div>
         </div>
       </div>
@@ -458,17 +459,10 @@ function initializeBetaCalculation(ticker) {
               </div>
             </div>
             <div class="beta-item">
-              <div class="beta-label">Stock Volatility</div>
-              <div class="beta-value">${data.stock_volatility}%</div>
+              <div class="beta-label">Annualized Volatility</div>
+              <div class="beta-value">${data.annualized_volatility}%</div>
               <div class="beta-description">
-                Annualized volatility
-              </div>
-            </div>
-            <div class="beta-item">
-              <div class="beta-label">Market Volatility</div>
-              <div class="beta-value">${data.market_volatility}%</div>
-              <div class="beta-description">
-                SPY annualized volatility
+                Annualized standard deviation of daily returns
               </div>
             </div>
           </div>
@@ -485,6 +479,103 @@ function initializeBetaCalculation(ticker) {
       });
   } catch (error) {
     console.error('Error initializing beta calculation:', error);
+  }
+}
+
+function displayRiskMetrics(company) {
+  try {
+    const betaContainer = document.querySelector('.beta-container');
+    if (!betaContainer) {
+      console.error('Beta container not found');
+      return;
+    }
+
+    // Get beta value from company data
+    const beta = company.beta;
+    if (beta === null || beta === undefined || beta === 'N/A') {
+      betaContainer.innerHTML = `
+        <div class="beta-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          Beta data not available for this stock
+        </div>
+      `;
+      return;
+    }
+
+    // Determine risk level based on beta
+    let riskLevel, riskColor, riskDescription;
+    if (beta > 1.5) {
+      riskLevel = 'High';
+      riskColor = '#ff6b6b';
+      riskDescription = 'Significantly more volatile than market';
+    } else if (beta > 0.8) {
+      riskLevel = 'Medium';
+      riskColor = '#ffd93d';
+      riskDescription = 'Moderately volatile compared to market';
+    } else {
+      riskLevel = 'Low';
+      riskColor = '#6bcf7f';
+      riskDescription = 'Less volatile than market';
+    }
+
+    // Get additional risk metrics
+    const trailingPE = company.trailing_pe;
+    const forwardPE = company.forward_pe;
+    const pegRatio = company.peg_ratio;
+    const annualizedVolatility = company.annualized_volatility;
+    const atr14d = company.atr_14d;
+    const hv30d = company.hv_30d;
+
+    betaContainer.innerHTML = `
+      <div class="beta-metrics">
+        <div class="beta-item">
+          <div class="beta-label">Beta Value</div>
+          <div class="beta-value" style="color: ${riskColor}">${beta.toFixed(2)}</div>
+          <div class="beta-description">
+            ${beta > 1 ? 'More volatile than market' : beta < 1 ? 'Less volatile than market' : 'Same volatility as market'}
+          </div>
+        </div>
+        <div class="beta-item">
+          <div class="beta-label">Risk Level</div>
+          <div class="beta-value" style="color: ${riskColor}">${riskLevel}</div>
+          <div class="beta-description">
+            ${riskDescription}
+          </div>
+        </div>
+        <div class="beta-item">
+          <div class="beta-label">Annualized Volatility</div>
+          <div class="beta-value">${annualizedVolatility !== undefined ? annualizedVolatility + '%' : 'N/A'}</div>
+          <div class="beta-description">
+            Annualized standard deviation of daily returns
+          </div>
+        </div>
+        <div class="beta-item">
+          <div class="beta-label">ATR (14-day)</div>
+          <div class="beta-value">${atr14d !== undefined && atr14d !== null ? atr14d : 'N/A'}</div>
+          <div class="beta-description">
+            Average True Range (14 days): typical daily price movement
+          </div>
+        </div>
+        <div class="beta-item">
+          <div class="beta-label">Historical Volatility (30-day)</div>
+          <div class="beta-value">${hv30d !== undefined && hv30d !== null ? hv30d + '%' : 'N/A'}</div>
+          <div class="beta-description">
+            30-day standard deviation of daily returns (not annualized)
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Error displaying risk metrics:', error);
+    const betaContainer = document.querySelector('.beta-container');
+    if (betaContainer) {
+      betaContainer.innerHTML = `
+        <div class="beta-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          Error displaying risk metrics: ${error.message}
+        </div>
+      `;
+    }
   }
 }
 
@@ -515,9 +606,6 @@ function initializeTimeframeButtons() {
 }
 
 function createCompanyOutlook(company, stock) {
-  console.log("Company data received:", company);
-  console.log("Stock data received:", stock);
-  
   // Clean up company name by removing class suffixes
   const cleanName = company.name ? company.name.replace(/ - Class [A-Z]$/, '') : 'N/A';
 
@@ -527,20 +615,36 @@ function createCompanyOutlook(company, stock) {
     : '<span class="na-value">No description available</span>';
 
   // Try all possible fields for each key detail
-  const industry = stock.industry || company.industry || company.industryCode || 'N/A';
-  const sector = stock.sector || company.sector || company.sectorCode || 'N/A';
+  const industry = company.industry || stock.industry || company.industryCode || 'N/A';
+  const sector = company.sector || stock.sector || company.sectorCode || 'N/A';
   const website = company.website || company.url || 'N/A';
   const exchange = company.exchangeCode || company.exchange || 'N/A';
 
-  // Format market cap and ex-dividend date
-  const marketCap = stock.marketCapIntraday ? formatNumber(stock.marketCapIntraday) : 'N/A';
-  const exDividendDate = stock.exDividendDate ? new Date(stock.exDividendDate * 1000).toLocaleDateString() : 'N/A';
+  // Format market cap using the new field from DefeatBeta
+  const marketCap = company.market_cap ? formatNumber(company.market_cap) : 'N/A';
   
   // Format full time employees with commas
-  const fullTimeEmployees = stock.fullTimeEmployees ? stock.fullTimeEmployees.toLocaleString() : 'N/A';
+  const fullTimeEmployees = company.full_time_employees ? company.full_time_employees.toLocaleString() : 'N/A';
   
-  // Format fiscal year ends
-  const fiscalYearEnds = stock.fiscalYearEnds || 'N/A';
+  // Format enterprise value
+  const enterpriseValue = company.enterprise_value ? formatNumber(company.enterprise_value) : 'N/A';
+  
+  // Format shares outstanding
+  const sharesOutstanding = company.shares_outstanding ? formatNumber(company.shares_outstanding) : 'N/A';
+  
+  // Format beta
+  const beta = company.beta ? company.beta.toFixed(2) : 'N/A';
+  
+  // Format P/E ratios
+  const trailingPE = company.trailing_pe ? company.trailing_pe.toFixed(2) : 'N/A';
+  const forwardPE = company.forward_pe ? company.forward_pe.toFixed(2) : 'N/A';
+  
+  // Format EPS
+  const trailingEPS = company.trailing_eps ? formatCurrency(company.trailing_eps) : 'N/A';
+  const forwardEPS = company.forward_eps ? formatCurrency(company.forward_eps) : 'N/A';
+  
+  // Format PEG ratio
+  const pegRatio = company.peg_ratio ? company.peg_ratio.toFixed(2) : 'N/A';
 
   return `
     <div class="company-outlook">
@@ -588,12 +692,44 @@ function createCompanyOutlook(company, stock) {
                 <td>${fullTimeEmployees}</td>
               </tr>
               <tr>
-                <th>Market Cap (Intraday)</th>
+                <th>Market Cap</th>
                 <td>${marketCap}</td>
               </tr>
               <tr>
-                <th>Ex-Dividend Date</th>
-                <td>${exDividendDate}</td>
+                <th>Enterprise Value</th>
+                <td>${enterpriseValue}</td>
+              </tr>
+              <tr>
+                <th>Shares Outstanding</th>
+                <td>${sharesOutstanding}</td>
+              </tr>
+              <tr>
+                <th>Beta</th>
+                <td>${beta}</td>
+              </tr>
+              <tr>
+                <th>Trailing P/E</th>
+                <td>${trailingPE}</td>
+              </tr>
+              <tr>
+                <th>Forward P/E</th>
+                <td>${forwardPE}</td>
+              </tr>
+              <tr>
+                <th>Trailing EPS</th>
+                <td>${trailingEPS}</td>
+              </tr>
+              <tr>
+                <th>Forward EPS</th>
+                <td>${forwardEPS}</td>
+              </tr>
+              <tr>
+                <th>PEG Ratio</th>
+                <td>${pegRatio}</td>
+              </tr>
+              <tr>
+                <th>Website</th>
+                <td>${website !== 'N/A' ? `<a href="${website}" target="_blank">${website}</a>` : 'N/A'}</td>
               </tr>
             </tbody>
           </table>
@@ -653,7 +789,7 @@ stockForm.addEventListener('submit', async (e) => {
       setTimeout(() => {
         initializePriceHistoryChart(ticker);
         initializeReturnsChart(ticker);
-        initializeBetaCalculation(ticker);
+        displayRiskMetrics(data.company);
         initializeTimeframeButtons();
       }, 100);
       
@@ -1265,7 +1401,7 @@ function displayComparisonResults(companies) {
     </tr>
     <tr>
       <th>Current Price</th>
-      ${companies.map(c => `<td>$${c.stock.last?.toFixed(2) || 'N/A'}</td>`).join('')}
+      ${companies.map(c => `<td>$${c.stock.last_close?.toFixed(2) || 'N/A'}</td>`).join('')}
     </tr>
     <tr>
       <th>Market Cap</th>
