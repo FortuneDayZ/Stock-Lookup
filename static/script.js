@@ -171,11 +171,10 @@ function createStockSummary(stock) {
         <div class="chart-header">
           <h3><i class="fas fa-chart-line"></i> Price History</h3>
           <div class="timeframe-selector">
-            <button class="timeframe-btn active" data-period="1d">1D</button>
             <button class="timeframe-btn" data-period="5d">5D</button>
             <button class="timeframe-btn" data-period="1mo">1M</button>
             <button class="timeframe-btn" data-period="6mo">6M</button>
-            <button class="timeframe-btn" data-period="1y">1Y</button>
+            <button class="timeframe-btn active" data-period="1y">1Y</button>
             <button class="timeframe-btn" data-period="5y">5Y</button>
             <button class="timeframe-btn" data-period="max">MAX</button>
           </div>

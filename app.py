@@ -173,7 +173,6 @@ def search():
                         "forward_pe": float(summary_row['forward_pe']) if not pd.isna(summary_row['forward_pe']) else None,
                         "trailing_eps": float(summary_row['tailing_eps']) if not pd.isna(summary_row['tailing_eps']) else None,
                         "forward_eps": float(summary_row['forward_eps']) if not pd.isna(summary_row['forward_eps']) else None,
-                        "peg_ratio": float(summary_row['peg_ratio']) if not pd.isna(summary_row['peg_ratio']) else None,
                         "currency": summary_row['currency'] if not pd.isna(summary_row['currency']) else None
                     })
             except Exception as e:
@@ -380,6 +379,10 @@ def historical():
         
         if price_data.empty:
             return jsonify({"error": "No historical data available"}), 404
+        
+        # Remove the most recent day from the price history
+        if len(price_data) > 1:
+            price_data = price_data.iloc[:-1]
         
         # Convert period to number of days for filtering
         period_days = {
