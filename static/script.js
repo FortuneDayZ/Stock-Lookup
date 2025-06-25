@@ -105,6 +105,23 @@ function formatTimestamp(timestamp) {
   }).format(date);
 }
 
+function formatLargeNumber(num) {
+  if (num === null || num === undefined || num === "N/A") return "N/A";
+  
+  const absNum = Math.abs(num);
+  if (absNum >= 1e12) {
+    return `$${(num / 1e12).toFixed(2)}T`;
+  } else if (absNum >= 1e9) {
+    return `$${(num / 1e9).toFixed(2)}B`;
+  } else if (absNum >= 1e6) {
+    return `$${(num / 1e6).toFixed(2)}M`;
+  } else if (absNum >= 1e3) {
+    return `$${(num / 1e3).toFixed(2)}K`;
+  } else {
+    return formatCurrency(num);
+  }
+}
+
 function createStockSummary(stock) {
   const changeClass = stock.change >= 0 ? 'positive' : 'negative';
   const changeIcon = stock.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
@@ -184,14 +201,14 @@ function createStockSummary(stock) {
         </div>
       </div>
 
-      <!-- Beta and Risk Metrics Section -->
+      <!-- Financial Metrics Section -->
       <div class="chart-section">
         <div class="chart-header">
-          <h3><i class="fas fa-shield-alt"></i> Risk Metrics</h3>
+          <h3><i class="fas fa-chart-line"></i> Financial Metrics</h3>
         </div>
         <div class="beta-container">
           <div class="beta-loading">
-            <i class="fas fa-spinner fa-spin"></i> Loading risk metrics...
+            <i class="fas fa-spinner fa-spin"></i> Loading financial metrics...
           </div>
         </div>
       </div>
@@ -482,8 +499,13 @@ function initializeBetaCalculation(ticker) {
   }
 }
 
-function displayRiskMetrics(company) {
+function displayFinancialMetrics(company, stock) {
   try {
+    console.log('Displaying financial metrics for:', company.ticker);
+    console.log('Stock data keys:', Object.keys(stock));
+    console.log('Gross Profit:', stock.gross_profit);
+    console.log('EBITDA:', stock.ebitda);
+    
     const betaContainer = document.querySelector('.beta-container');
     if (!betaContainer) {
       console.error('Beta container not found');
@@ -518,13 +540,11 @@ function displayRiskMetrics(company) {
       riskDescription = 'Less volatile than market';
     }
 
-    // Get additional risk metrics
+    // Get additional financial metrics
     const trailingPE = company.trailing_pe;
     const forwardPE = company.forward_pe;
-    const pegRatio = company.peg_ratio;
-    const annualizedVolatility = company.annualized_volatility;
-    const atr14d = company.atr_14d;
-    const hv30d = company.hv_30d;
+    const grossProfit = stock.gross_profit;
+    const ebitda = stock.ebitda;
 
     betaContainer.innerHTML = `
       <div class="beta-metrics">
@@ -543,36 +563,29 @@ function displayRiskMetrics(company) {
           </div>
         </div>
         <div class="beta-item">
-          <div class="beta-label">Annualized Volatility</div>
-          <div class="beta-value">${annualizedVolatility !== undefined ? annualizedVolatility + '%' : 'N/A'}</div>
+          <div class="beta-label">Gross Profit</div>
+          <div class="beta-value">${formatLargeNumber(grossProfit)}</div>
           <div class="beta-description">
-            Annualized standard deviation of daily returns
+            Annual gross profit from income statement
           </div>
         </div>
         <div class="beta-item">
-          <div class="beta-label">ATR (14-day)</div>
-          <div class="beta-value">${atr14d !== undefined && atr14d !== null ? atr14d : 'N/A'}</div>
+          <div class="beta-label">EBITDA</div>
+          <div class="beta-value">${formatLargeNumber(ebitda)}</div>
           <div class="beta-description">
-            Average True Range (14 days): typical daily price movement
-          </div>
-        </div>
-        <div class="beta-item">
-          <div class="beta-label">Historical Volatility (30-day)</div>
-          <div class="beta-value">${hv30d !== undefined && hv30d !== null ? hv30d + '%' : 'N/A'}</div>
-          <div class="beta-description">
-            30-day standard deviation of daily returns (not annualized)
+            Earnings Before Interest, Taxes, Depreciation, and Amortization
           </div>
         </div>
       </div>
     `;
   } catch (error) {
-    console.error('Error displaying risk metrics:', error);
+    console.error('Error displaying financial metrics:', error);
     const betaContainer = document.querySelector('.beta-container');
     if (betaContainer) {
       betaContainer.innerHTML = `
         <div class="beta-error">
           <i class="fas fa-exclamation-triangle"></i>
-          Error displaying risk metrics: ${error.message}
+          Error displaying financial metrics: ${error.message}
         </div>
       `;
     }
@@ -643,9 +656,7 @@ function createCompanyOutlook(company, stock) {
   const trailingEPS = company.trailing_eps ? formatCurrency(company.trailing_eps) : 'N/A';
   const forwardEPS = company.forward_eps ? formatCurrency(company.forward_eps) : 'N/A';
   
-  // Format PEG ratio
-  const pegRatio = company.peg_ratio ? company.peg_ratio.toFixed(2) : 'N/A';
-
+ 
   return `
     <div class="company-outlook">
       <div class="company-header">
@@ -724,10 +735,6 @@ function createCompanyOutlook(company, stock) {
                 <td>${forwardEPS}</td>
               </tr>
               <tr>
-                <th>PEG Ratio</th>
-                <td>${pegRatio}</td>
-              </tr>
-              <tr>
                 <th>Website</th>
                 <td>${website !== 'N/A' ? `<a href="${website}" target="_blank">${website}</a>` : 'N/A'}</td>
               </tr>
@@ -789,7 +796,7 @@ stockForm.addEventListener('submit', async (e) => {
       setTimeout(() => {
         initializePriceHistoryChart(ticker);
         initializeReturnsChart(ticker);
-        displayRiskMetrics(data.company);
+        displayFinancialMetrics(data.company, data.stock);
         initializeTimeframeButtons();
       }, 100);
       
@@ -1481,297 +1488,3 @@ function initializeUI() {
 
 // Call initialization when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeUI);
-
-function renderPerformanceCalculator() {
-  let modal = document.getElementById('performanceCalculator');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'performanceCalculator';
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.width = '100vw';
-    modal.style.height = '100vh';
-    modal.style.background = 'rgba(0,0,0,0.3)';
-    modal.style.zIndex = '2000';
-    modal.style.display = 'flex';
-    modal.style.justifyContent = 'center';
-    modal.style.alignItems = 'center';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    document.body.appendChild(modal);
-  }
-
-  modal.innerHTML = `
-    <div style="background:var(--card-background);padding:2rem;border-radius:1rem;min-width:350px;max-width:95vw;max-height:90vh;overflow:auto;box-shadow:0 2px 16px rgba(0,0,0,0.15);">
-      <h2 style="margin-bottom:1.5rem;">Performance Calculator</h2>
-      
-      <div class="calculator-section">
-        <h3>Return Calculator</h3>
-        <div class="calculator-input-group">
-          <div class="calculator-input">
-            <label for="entryPrice">Entry Price ($)</label>
-            <input type="number" id="entryPrice" min="0" step="0.01" placeholder="0.00" />
-          </div>
-          <div class="calculator-input">
-            <label for="currentPrice">Current Price ($)</label>
-            <input type="number" id="currentPrice" min="0" step="0.01" placeholder="0.00" />
-          </div>
-          <div class="calculator-input">
-            <label for="shares">Number of Shares</label>
-            <input type="number" id="shares" min="1" step="1" placeholder="1" />
-          </div>
-        </div>
-        <div class="calculator-result" id="returnResult" style="display:none;">
-          <h4>Return Analysis</h4>
-          <div class="value" id="returnValue"></div>
-          <div class="detail" id="returnDetail"></div>
-        </div>
-      </div>
-
-      <div class="calculator-section">
-        <h3>Annualized Return</h3>
-        <div class="calculator-input-group">
-          <div class="calculator-input">
-            <label for="startDate">Start Date</label>
-            <input type="date" id="startDate" />
-          </div>
-          <div class="calculator-input">
-            <label for="endDate">End Date</label>
-            <input type="date" id="endDate" />
-          </div>
-        </div>
-        <div class="calculator-result" id="annualizedResult" style="display:none;">
-          <h4>Annualized Return</h4>
-          <div class="value" id="annualizedValue"></div>
-          <div class="detail" id="annualizedDetail"></div>
-        </div>
-      </div>
-
-      <div class="calculator-section">
-        <h3>Breakeven Analysis</h3>
-        <div class="calculator-input-group">
-          <div class="calculator-input">
-            <label for="entryPriceBE">Entry Price ($)</label>
-            <input type="number" id="entryPriceBE" min="0" step="0.01" placeholder="0.00" />
-          </div>
-          <div class="calculator-input">
-            <label for="sharesBE">Number of Shares</label>
-            <input type="number" id="sharesBE" min="1" step="1" placeholder="1" />
-          </div>
-          <div class="calculator-input">
-            <label for="fees">Fees/Slippage (%)</label>
-            <input type="number" id="fees" min="0" step="0.01" placeholder="0.00" />
-          </div>
-        </div>
-        <div class="calculator-result" id="breakevenResult" style="display:none;">
-          <h4>Breakeven Price</h4>
-          <div class="value" id="breakevenValue"></div>
-          <div class="detail" id="breakevenDetail"></div>
-        </div>
-      </div>
-
-      <button onclick="document.getElementById('performanceCalculator').remove();" class="btn-secondary" style="width:100%;">Close</button>
-    </div>
-  `;
-
-  // Attach event listeners
-  setTimeout(() => {
-    // Return Calculator
-    const returnInputs = ['entryPrice', 'currentPrice', 'shares'];
-    returnInputs.forEach(id => {
-      document.getElementById(id).addEventListener('input', calculateReturn);
-    });
-
-    // Annualized Return
-    const annualizedInputs = ['startDate', 'endDate'];
-    annualizedInputs.forEach(id => {
-      document.getElementById(id).addEventListener('change', calculateAnnualizedReturn);
-    });
-
-    // Breakeven Analysis
-    const breakevenInputs = ['entryPriceBE', 'sharesBE', 'fees'];
-    breakevenInputs.forEach(id => {
-      document.getElementById(id).addEventListener('input', calculateBreakeven);
-    });
-  }, 100);
-}
-
-function calculateReturn() {
-  const entryPrice = parseFloat(document.getElementById('entryPrice').value) || 0;
-  const currentPrice = parseFloat(document.getElementById('currentPrice').value) || 0;
-  const shares = parseInt(document.getElementById('shares').value) || 0;
-
-  if (entryPrice && currentPrice && shares) {
-    const totalReturn = ((currentPrice - entryPrice) / entryPrice) * 100;
-    const absoluteReturn = (currentPrice - entryPrice) * shares;
-    
-    const resultDiv = document.getElementById('returnResult');
-    const valueDiv = document.getElementById('returnValue');
-    const detailDiv = document.getElementById('returnDetail');
-    
-    resultDiv.style.display = 'block';
-    valueDiv.textContent = `${totalReturn.toFixed(2)}%`;
-    valueDiv.className = `value ${totalReturn >= 0 ? 'positive' : 'negative'}`;
-    detailDiv.textContent = `Absolute Return: ${formatCurrency(absoluteReturn)}`;
-  } else {
-    document.getElementById('returnResult').style.display = 'none';
-  }
-}
-
-function calculateAnnualizedReturn() {
-  const startDate = document.getElementById('startDate').value;
-  const endDate = document.getElementById('endDate').value;
-  const entryPrice = parseFloat(document.getElementById('entryPrice').value) || 0;
-  const currentPrice = parseFloat(document.getElementById('currentPrice').value) || 0;
-
-  if (startDate && endDate && entryPrice && currentPrice) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const years = (end - start) / (1000 * 60 * 60 * 24 * 365);
-    
-    if (years > 0) {
-      const totalReturn = (currentPrice - entryPrice) / entryPrice;
-      const annualizedReturn = (Math.pow(1 + totalReturn, 1 / years) - 1) * 100;
-      
-      const resultDiv = document.getElementById('annualizedResult');
-      const valueDiv = document.getElementById('annualizedValue');
-      const detailDiv = document.getElementById('annualizedDetail');
-      
-      resultDiv.style.display = 'block';
-      valueDiv.textContent = `${annualizedReturn.toFixed(2)}%`;
-      valueDiv.className = `value ${annualizedReturn >= 0 ? 'positive' : 'negative'}`;
-      detailDiv.textContent = `Holding Period: ${years.toFixed(2)} years`;
-    }
-  } else {
-    document.getElementById('annualizedResult').style.display = 'none';
-  }
-}
-
-function calculateBreakeven() {
-  const entryPrice = parseFloat(document.getElementById('entryPriceBE').value) || 0;
-  const shares = parseInt(document.getElementById('sharesBE').value) || 0;
-  const fees = parseFloat(document.getElementById('fees').value) || 0;
-
-  if (entryPrice && shares && fees) {
-    const totalCost = entryPrice * shares;
-    const feeAmount = totalCost * (fees / 100);
-    const breakevenPrice = (totalCost + feeAmount) / shares;
-    
-    const resultDiv = document.getElementById('breakevenResult');
-    const valueDiv = document.getElementById('breakevenValue');
-    const detailDiv = document.getElementById('breakevenDetail');
-    
-    resultDiv.style.display = 'block';
-    valueDiv.textContent = formatCurrency(breakevenPrice);
-    valueDiv.className = 'value';
-    detailDiv.textContent = `Total Fees: ${formatCurrency(feeAmount)}`;
-  } else {
-    document.getElementById('breakevenResult').style.display = 'none';
-  }
-}
-
-// Note handling
-const addNoteBtn = document.getElementById('addNoteBtn');
-const notesContainer = document.getElementById('notesContainer');
-
-addNoteBtn.addEventListener('click', () => {
-  const currentTicker = tickerInput.value.trim();
-  if (!currentTicker) {
-    showError('Please search for a stock first before adding a note');
-    return;
-  }
-
-  // Create and show the note modal
-  const modal = document.createElement('div');
-  modal.className = 'modal';
-  modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Add Note for ${currentTicker}</h3>
-        <button class="close-modal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="noteTitle">Title</label>
-          <input type="text" id="noteTitle" placeholder="Enter note title" class="form-input">
-        </div>
-        <div class="form-group">
-          <label for="noteContent">Note</label>
-          <textarea id="noteContent" placeholder="Enter your note" class="form-input" rows="4"></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary close-modal">Cancel</button>
-        <button class="btn-primary" id="saveNoteBtn">Save Note</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  // Add event listeners for the modal
-  const closeModal = () => {
-    modal.remove();
-  };
-
-  modal.querySelectorAll('.close-modal').forEach(btn => {
-    btn.addEventListener('click', closeModal);
-  });
-
-  modal.querySelector('#saveNoteBtn').addEventListener('click', () => {
-    const title = modal.querySelector('#noteTitle').value.trim();
-    const content = modal.querySelector('#noteContent').value.trim();
-
-    if (!title || !content) {
-      showError('Please enter both title and note content');
-      return;
-    }
-
-    const note = {
-      title,
-      content,
-      timestamp: new Date().toISOString()
-    };
-
-    saveNoteForTicker(currentTicker, note);
-    renderNotesSection(currentTicker);
-    closeModal();
-  });
-});
-
-function renderNotesSection(ticker) {
-  const notes = getStockNotes();
-  const tickerNotes = notes[ticker] || [];
-  
-  if (tickerNotes.length === 0) {
-    notesContainer.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-sticky-note"></i>
-        <p>No notes yet. Click the + button to add a note.</p>
-      </div>
-    `;
-    return;
-  }
-
-  notesContainer.innerHTML = tickerNotes.map((note, index) => `
-    <div class="note-item">
-      <div class="note-header">
-        <h4 class="note-title">${note.title}</h4>
-        <span class="note-date">${formatTimestamp(note.timestamp)}</span>
-      </div>
-      <div class="note-content">${note.content}</div>
-      <button class="delete-note" data-index="${index}" title="Delete note">
-        <i class="fas fa-trash"></i>
-      </button>
-    </div>
-  `).join('');
-
-  // Add event listeners to delete buttons
-  notesContainer.querySelectorAll('.delete-note').forEach(button => {
-    button.addEventListener('click', (e) => {
-      const index = parseInt(e.target.closest('.delete-note').dataset.index);
-      deleteNoteForTicker(ticker, index);
-      renderNotesSection(ticker);
-    });
-  });
-}

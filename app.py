@@ -154,6 +154,7 @@ def search():
         # -----------------------------------------------------------
         # Step 2: Get price data from DefeatBeta API (replacing Yahoo Finance)
         # -----------------------------------------------------------
+        defeat_stock = None
         try:
             defeat_stock = Ticker(ticker)
             
@@ -252,45 +253,60 @@ def search():
         stock_data["change_percent"] = change_percent
 
         # -----------------------------------------------------------
-        # Step 5: Calculate annualized volatility and add to stock_data
+        # Step 5: Fetch annual income statement data for Gross Profit and EBITDA
         # -----------------------------------------------------------
         try:
-            defeat_stock = Ticker(ticker)
-            price_data = defeat_stock.price()
-            if not price_data.empty and len(price_data) > 1:
-                stock_returns = price_data['close'].pct_change().dropna()
-                stock_volatility = stock_returns.std() * (252 ** 0.5)
-                stock_data['annualized_volatility'] = round(stock_volatility * 100, 2)
+            if defeat_stock is not None:
+                annual_income_stmt = defeat_stock.annual_income_statement()
+                
+                print(f"Annual income statement for {ticker}:")
+                print(f"Statement object: {annual_income_stmt}")
+                
+                if annual_income_stmt is not None and hasattr(annual_income_stmt, 'data') and not annual_income_stmt.data.empty:
+                    income_data = annual_income_stmt.data
+                    print(f"Income data columns: {income_data.columns.tolist()}")
+                    print(f"Income data shape: {income_data.shape}")
+                    print(f"Breakdown values: {income_data['Breakdown'].values.tolist()}")
+                    
+                    if len(income_data.columns) > 1:
+                        latest_year = income_data.columns[1]  # First column after 'Breakdown'
+                        print(f"Latest year column: {latest_year}")
+                        
+                        # Extract Gross Profit and EBITDA
+                        if 'Gross Profit' in income_data['Breakdown'].values:
+                            gross_profit = income_data.set_index('Breakdown').loc['Gross Profit', latest_year]
+                            print(f"Found Gross Profit: {gross_profit}")
+                        else:
+                            gross_profit = None
+                            print("Gross Profit not found in breakdown")
+                        
+                        if 'EBITDA' in income_data['Breakdown'].values:
+                            ebitda = income_data.set_index('Breakdown').loc['EBITDA', latest_year]
+                            print(f"Found EBITDA: {ebitda}")
+                        else:
+                            ebitda = None
+                            print("EBITDA not found in breakdown")
+                        
+                        stock_data['gross_profit'] = gross_profit
+                        stock_data['ebitda'] = ebitda
+                    else:
+                        print("Income data has insufficient columns")
+                        stock_data['gross_profit'] = None
+                        stock_data['ebitda'] = None
+                else:
+                    print("Annual income statement is None or empty")
+                    stock_data['gross_profit'] = None
+                    stock_data['ebitda'] = None
             else:
-                stock_data['annualized_volatility'] = None
+                print("Defeat_stock is None, cannot fetch income statement")
+                stock_data['gross_profit'] = None
+                stock_data['ebitda'] = None
         except Exception as e:
-            print('Error calculating annualized volatility in /search:', e)
-            stock_data['annualized_volatility'] = None
-
-        # -----------------------------------------------------------
-        # Step 6: Calculate ATR (14-day) and Historical Volatility (30-day)
-        # -----------------------------------------------------------
-        try:
-            if not price_data.empty and len(price_data) > 14:
-                price_data['prev_close'] = price_data['close'].shift(1)
-                price_data['tr'] = price_data.apply(
-                    lambda row: max(
-                        row['high'] - row['low'],
-                        abs(row['high'] - row['prev_close']) if not pd.isna(row['prev_close']) else 0,
-                        abs(row['low'] - row['prev_close']) if not pd.isna(row['prev_close']) else 0
-                    ), axis=1
-                )
-                atr_14d = price_data['tr'].rolling(window=14).mean().iloc[-1]
-                stock_data['atr_14d'] = round(atr_14d, 2) if not pd.isna(atr_14d) else None
-                hv_30d = price_data['close'].pct_change().rolling(window=30).std().iloc[-1] * 100
-                stock_data['hv_30d'] = round(hv_30d, 2) if not pd.isna(hv_30d) else None
-            else:
-                stock_data['atr_14d'] = None
-                stock_data['hv_30d'] = None
-        except Exception as e:
-            print('Error calculating ATR/HV in /search:', e)
-            stock_data['atr_14d'] = None
-            stock_data['hv_30d'] = None
+            print('Error fetching annual income statement data:', e)
+            import traceback
+            traceback.print_exc()
+            stock_data['gross_profit'] = None
+            stock_data['ebitda'] = None
 
         # Get current timestamp for API call using timezone-aware datetime
         api_timestamp = datetime.now(UTC).isoformat()
@@ -537,8 +553,8 @@ def beta():
         return jsonify({"error": "Failed to calculate beta"}), 500
 
 # -----------------------------------------------------------
-# Entry Point: Run Flask development server
+# Main execution
 # -----------------------------------------------------------
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=True, port=5001)

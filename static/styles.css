@@ -1502,7 +1502,46 @@ input[type="text"]:focus {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-color);
-  margin-bottom: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+/* Enhanced styling for financial metrics */
+.beta-item:nth-child(3) .beta-value,
+.beta-item:nth-child(4) .beta-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding: 0.25rem 0;
+}
+
+.beta-item:nth-child(3) .beta-label,
+.beta-item:nth-child(4) .beta-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.beta-item:nth-child(3),
+.beta-item:nth-child(4) {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.05));
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  transition: all 0.3s ease;
+}
+
+.beta-item:nth-child(3):hover,
+.beta-item:nth-child(4):hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(59, 130, 246, 0.1));
+  border-color: rgba(37, 99, 235, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .beta-description {
@@ -1527,21 +1566,30 @@ input[type="text"]:focus {
 @media (max-width: 768px) {
   .chart-header {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 1rem;
   }
   
   .timeframe-selector {
-    width: 100%;
     justify-content: center;
   }
   
   .beta-metrics {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
+    grid-template-columns: 1fr;
   }
   
   .chart-container {
-    height: 250px;
+    height: 300px;
+  }
+  
+  /* Mobile styling for financial metrics */
+  .beta-item:nth-child(3) .beta-value,
+  .beta-item:nth-child(4) .beta-value {
+    font-size: 1.5rem;
+  }
+  
+  .beta-item:nth-child(3) .beta-label,
+  .beta-item:nth-child(4) .beta-label {
+    font-size: 1rem;
   }
 }
 
