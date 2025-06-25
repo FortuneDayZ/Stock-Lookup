@@ -25,6 +25,35 @@ function updateThemeIcon() {
   icon.className = currentTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
 }
 
+// Sidebar toggle functionality
+const sidebarToggle = document.getElementById('sidebarToggle');
+const rightSidebar = document.querySelector('.right-sidebar');
+
+if (sidebarToggle && rightSidebar) {
+  sidebarToggle.addEventListener('click', () => {
+    rightSidebar.classList.toggle('active');
+    
+    // Update toggle button icon
+    const icon = sidebarToggle.querySelector('i');
+    if (rightSidebar.classList.contains('active')) {
+      icon.className = 'fas fa-times';
+    } else {
+      icon.className = 'fas fa-bars';
+    }
+  });
+
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 1024) {
+      if (!rightSidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+        rightSidebar.classList.remove('active');
+        const icon = sidebarToggle.querySelector('i');
+        icon.className = 'fas fa-bars';
+      }
+    }
+  });
+}
+
 // Form handling
 const stockForm = document.getElementById('stockForm');
 const tickerInput = document.getElementById('ticker');
