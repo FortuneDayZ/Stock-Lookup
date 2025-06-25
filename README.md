@@ -1,5 +1,5 @@
 # SimpleStockTracker
-
+https://github.com/defeat-beta/defeatbeta-api/blob/main/doc/Example.md#15-example-accessing-financial-news
 ## 📘 Overview
 
 **SimpleStockTracker** is a user-friendly web application that enables users to quickly search and view detailed stock market data using a stock ticker symbol. Built with Flask and SQLite, this app fetches real-time data from the Tiingo API and provides users with a straightforward interface to view company details, stock summaries, and recent search history.
