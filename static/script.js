@@ -1108,7 +1108,7 @@ function renderNotesSection(ticker) {
       </div>
       <div class="note-content">${note.content}</div>
       <button class="delete-note" data-index="${index}" title="Delete note">
-        <i class="fas fa-trash"></i>
+        <i class="fas fa-trash-alt"></i>
       </button>
     </div>
   `).join('');

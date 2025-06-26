@@ -39,66 +39,12 @@ body {
   transition: background-color 0.3s, color 0.3s;
   display: grid;
   grid-template-areas: 
-    "header"
     "main";
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
-}
-
-/* Navigation */
-.navbar {
-  background-color: var(--card-background);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  grid-area: header;
-}
-
-.nav-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 72px; /* Set explicit height for navbar */
-}
-
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--primary-color);
-}
-
-.nav-links {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.nav-links a {
-  color: var(--text-color);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.2s;
-}
-
-.nav-links a:hover {
-  background-color: var(--hover-color);
-}
-
-.nav-links a.active {
-  color: var(--primary-color);
 }
 
 /* Main Content */
@@ -106,8 +52,19 @@ body {
   grid-area: main;
   padding: 2rem 1rem;
   overflow-y: auto;
-  margin-right: 320px;
+  margin-right: 360px; /* Updated to match new sidebar width */
   transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-content.sidebar-collapsed {
+  margin-right: 80px; /* Updated to match new collapsed width */
+}
+
+@media (max-width: 1024px) {
+  .main-content,
+  .main-content.sidebar-collapsed {
+    margin-right: 0;
+  }
 }
 
 .container {
@@ -121,6 +78,24 @@ body {
   padding: 2rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
+}
+
+/* Nav Brand in Search Card */
+.search-card .nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.search-card .nav-brand i {
+  font-size: 2rem;
+  color: var(--primary-color);
 }
 
 .search-card h1 {
@@ -889,10 +864,10 @@ input[type="text"]:focus {
 /* Enhanced Right Sidebar - YouTube Style */
 .right-sidebar {
   position: fixed;
-  top: 72px; /* Start below navbar */
+  top: 2rem; /* Match the main content padding */
   right: 0;
-  width: 320px; /* Increased from 280px */
-  height: calc(100vh - 72px - 60px); /* Account for navbar and footer */
+  width: 360px; /* Increased from 280px */
+  height: calc(100vh - 4rem); /* Account for top and bottom padding */
   background: var(--card-background);
   border-left: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
@@ -902,6 +877,7 @@ input[type="text"]:focus {
   flex-direction: column;
   z-index: 100;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  border-radius: 1.5rem 0 0 1.5rem; /* Rounded left corners */
 }
 
 [data-theme="dark"] .right-sidebar {
@@ -915,12 +891,13 @@ input[type="text"]:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem; /* Increased padding */
+  padding: 1.5rem 1.5rem 1rem 1.5rem; /* Increased padding */
   border-bottom: 1px solid var(--border-color);
   background: linear-gradient(135deg, var(--card-background), var(--hover-color));
   position: sticky;
   top: 0;
   z-index: 10;
+  border-radius: 1.5rem 0 0 0; /* Rounded top-left corner */
 }
 
 [data-theme="dark"] .sidebar-header {
@@ -943,7 +920,7 @@ input[type="text"]:focus {
   color: var(--text-secondary);
   cursor: pointer;
   padding: 0.75rem; /* Increased padding */
-  border-radius: 0.5rem;
+  border-radius: 0.75rem; /* More rounded */
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -965,7 +942,7 @@ input[type="text"]:focus {
 /* Sidebar Content */
 .sidebar-content {
   flex: 1;
-  padding: 1rem; /* Increased padding */
+  padding: 1rem 1.25rem; /* Increased padding */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -978,7 +955,7 @@ input[type="text"]:focus {
   align-items: center;
   gap: 1rem; /* Increased gap */
   padding: 1rem 1.25rem; /* Increased padding */
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
   color: var(--text-color);
   text-decoration: none;
   font-size: 1rem; /* Increased font size */
@@ -1003,7 +980,7 @@ input[type="text"]:focus {
   background: var(--hover-color);
   opacity: 0;
   transition: opacity 0.2s ease;
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
 }
 
 [data-theme="dark"] .sidebar-nav-item::before {
@@ -1015,7 +992,7 @@ input[type="text"]:focus {
 }
 
 .sidebar-nav-item:hover {
-  transform: translateX(4px);
+  transform: translateX(6px); /* Increased movement */
   color: var(--text-color);
 }
 
@@ -1031,7 +1008,7 @@ input[type="text"]:focus {
 
 .sidebar-nav-item i {
   font-size: 1.5rem; /* Increased icon size */
-  width: 2rem; /* Increased width */
+  width: 1.75rem; /* Increased width */
   text-align: center;
   color: var(--text-secondary);
   transition: color 0.2s ease;
@@ -1072,7 +1049,7 @@ input[type="text"]:focus {
 
 .sidebar-section-header i {
   font-size: 1.25rem; /* Increased icon size */
-  width: 2rem; /* Increased width */
+  width: 1.75rem; /* Increased width */
   text-align: center;
 }
 
@@ -1114,7 +1091,7 @@ input[type="text"]:focus {
   padding: 1rem 1.25rem; /* Increased padding */
   background: transparent;
   border: none;
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -1133,7 +1110,7 @@ input[type="text"]:focus {
   background: var(--hover-color);
   opacity: 0;
   transition: opacity 0.2s ease;
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
 }
 
 [data-theme="dark"] .watchlist-item::before {
@@ -1145,7 +1122,7 @@ input[type="text"]:focus {
 }
 
 .watchlist-item:hover {
-  transform: translateX(4px);
+  transform: translateX(6px); /* Increased movement */
 }
 
 .watchlist-item .ticker {
@@ -1171,7 +1148,7 @@ input[type="text"]:focus {
 .note-item {
   background: transparent;
   border: none;
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
   padding: 1rem 1.25rem; /* Increased padding */
   display: flex;
   flex-direction: column;
@@ -1195,7 +1172,7 @@ input[type="text"]:focus {
   background: var(--hover-color);
   opacity: 0;
   transition: opacity 0.2s ease;
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
 }
 
 [data-theme="dark"] .note-item::before {
@@ -1207,7 +1184,7 @@ input[type="text"]:focus {
 }
 
 .note-item:hover {
-  transform: translateX(4px);
+  transform: translateX(6px); /* Increased movement */
 }
 
 .note-header {
@@ -1219,7 +1196,7 @@ input[type="text"]:focus {
 
 .note-title {
   margin: 0;
-  font-size: 0.95rem; /* Increased font size */
+  font-size: 1rem; /* Increased font size */
   font-weight: 600;
   color: var(--text-color);
   line-height: 1.3;
@@ -1236,7 +1213,7 @@ input[type="text"]:focus {
 .note-content {
   color: var(--text-secondary);
   line-height: 1.4;
-  font-size: 0.85rem; /* Increased font size */
+  font-size: 0.9rem; /* Increased font size */
   font-weight: 400;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1254,14 +1231,14 @@ input[type="text"]:focus {
   opacity: 0;
   cursor: pointer;
   padding: 0.375rem; /* Increased padding */
-  border-radius: 0.375rem;
+  border-radius: 0.5rem; /* More rounded */
   transition: all 0.2s ease;
   width: 1.75rem; /* Increased size */
   height: 1.75rem; /* Increased size */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem; /* Increased font size */
+  font-size: 0.875rem; /* Increased font size */
 }
 
 .note-item:hover .delete-note {
@@ -1288,7 +1265,7 @@ input[type="text"]:focus {
   padding: 1rem 1.25rem; /* Increased padding */
   background: transparent;
   border: none;
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -1307,7 +1284,7 @@ input[type="text"]:focus {
   background: var(--hover-color);
   opacity: 0;
   transition: opacity 0.2s ease;
-  border-radius: 0.75rem;
+  border-radius: 1rem; /* More rounded */
 }
 
 [data-theme="dark"] .summary-item::before {
@@ -1319,12 +1296,12 @@ input[type="text"]:focus {
 }
 
 .summary-item:hover {
-  transform: translateX(4px);
+  transform: translateX(6px); /* Increased movement */
 }
 
 .summary-item .label {
   color: var(--text-secondary);
-  font-size: 0.9rem; /* Increased font size */
+  font-size: 0.95rem; /* Increased font size */
   font-weight: 500;
   flex: 1;
 }
@@ -1367,9 +1344,9 @@ input[type="text"]:focus {
   font-weight: 400;
 }
 
-/* Collapsed State - Improved with better icons */
+/* Collapsed State - Improved with unique icons */
 .right-sidebar.collapsed {
-  width: 80px; /* Increased from 72px for better spacing */
+  width: 80px; /* Increased from 72px */
 }
 
 .right-sidebar.collapsed .sidebar-title,
@@ -1399,7 +1376,7 @@ input[type="text"]:focus {
 .right-sidebar.collapsed .note-item i,
 .right-sidebar.collapsed .summary-item i {
   margin: 0;
-  font-size: 1.75rem; /* Increased icon size for better visibility */
+  font-size: 1.75rem; /* Increased icon size for collapsed state */
 }
 
 /* Enhanced scrollbar for sidebar */
@@ -1413,7 +1390,7 @@ input[type="text"]:focus {
 
 .right-sidebar::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 4px;
+  border-radius: 4px; /* More rounded */
 }
 
 .right-sidebar::-webkit-scrollbar-thumb:hover {
@@ -1432,7 +1409,7 @@ input[type="text"]:focus {
 @media (max-width: 1024px) {
   .right-sidebar {
     transform: translateX(100%);
-    width: 320px; /* Keep consistent width */
+    width: 360px; /* Keep the increased width */
   }
   
   .right-sidebar.active {
@@ -1440,7 +1417,7 @@ input[type="text"]:focus {
   }
   
   .right-sidebar.collapsed {
-    width: 320px; /* Keep consistent width on mobile */
+    width: 360px; /* Keep the increased width on mobile */
     transform: translateX(100%);
   }
   
@@ -1484,39 +1461,39 @@ input[type="text"]:focus {
 @media (max-width: 768px) {
   .right-sidebar {
     width: 100%;
-    max-width: 360px; /* Increased max width */
+    max-width: 380px; /* Increased max-width */
   }
   
   .sidebar-content {
-    padding: 0.75rem; /* Adjusted padding */
+    padding: 0.75rem 1.5rem; /* Increased padding */
   }
   
   .sidebar-nav-item,
   .watchlist-item,
   .note-item,
   .summary-item {
-    padding: 1rem 1.25rem; /* Keep consistent padding */
+    padding: 1.125rem 1.5rem; /* Increased padding */
   }
 }
 
 @media (max-width: 480px) {
   .sidebar-content {
-    padding: 0.5rem; /* Adjusted padding */
+    padding: 0.5rem 1.25rem; /* Increased padding */
   }
   
   .sidebar-nav-item,
   .watchlist-item,
   .note-item,
   .summary-item {
-    padding: 0.875rem 1rem; /* Adjusted padding */
-    font-size: 0.95rem; /* Adjusted font size */
+    padding: 1rem 1.25rem; /* Increased padding */
+    font-size: 0.95rem; /* Increased font size */
   }
   
   .sidebar-nav-item i,
   .watchlist-item i,
   .note-item i,
   .summary-item i {
-    font-size: 1.25rem; /* Adjusted icon size */
+    font-size: 1.25rem; /* Increased icon size */
   }
 }
 
@@ -1524,23 +1501,6 @@ input[type="text"]:focus {
 .right-sidebar::before,
 .right-sidebar::after {
   display: none;
-}
-
-/* Update main content margin for sidebar */
-.main-content {
-  margin-right: 320px; /* Updated to match new sidebar width */
-  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.main-content.sidebar-collapsed {
-  margin-right: 80px; /* Updated to match new collapsed width */
-}
-
-@media (max-width: 1024px) {
-  .main-content,
-  .main-content.sidebar-collapsed {
-    margin-right: 0;
-  }
 }
 
 /* Chart Sections */
