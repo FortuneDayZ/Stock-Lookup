@@ -25,10 +25,6 @@
         <i class="fas fa-chart-line"></i>
         <span>StockLookup</span>
       </div>
-      <div class="nav-links">
-        <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
-        <a href="#" id="themeToggle"><i class="fas fa-moon"></i> Theme</a>
-      </div>
     </div>
   </nav>
 
@@ -88,6 +84,18 @@
   <!-- Right Sidebar -->
   <aside class="right-sidebar">
     <div class="sidebar-content">
+      <!-- Navigation Section -->
+      <div class="sidebar-section navigation-section">
+        <a href="/" class="sidebar-nav-link active">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <button id="themeToggle" class="sidebar-nav-link">
+          <i class="fas fa-moon"></i>
+          <span>Theme</span>
+        </button>
+      </div>
+
       <div class="sidebar-section">
         <h3><i class="fas fa-tools"></i> Investment Tools</h3>
         <button id="portfolioBtn" class="sidebar-btn">
@@ -150,14 +158,6 @@
   <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
     <i class="fas fa-bars"></i>
   </button>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>&copy;  2025 StockLookup. All rights reserved. Designed and developed by Marsel Abdullin.</p>
-      <p>Data provided by Tiingo and Yahoo Finance</p>
-    </div>
-  </footer>
 
   <!-- -----------------------------------------------------------
        JavaScript: Handles form submission and tab logic

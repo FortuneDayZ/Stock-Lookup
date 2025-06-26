@@ -1514,5 +1514,30 @@ function initializeUI() {
   }
 }
 
+// Ensure sidebar toggle functionality is properly initialized
+function ensureSidebarToggle() {
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const rightSidebar = document.querySelector('.right-sidebar');
+  
+  if (sidebarToggle && rightSidebar) {
+    // Ensure the toggle button is visible on mobile
+    if (window.innerWidth <= 1024) {
+      sidebarToggle.style.display = 'flex';
+    } else {
+      sidebarToggle.style.display = 'none';
+    }
+    
+    // Add window resize listener to show/hide toggle button
+    window.addEventListener('resize', () => {
+      if (window.innerWidth <= 1024) {
+        sidebarToggle.style.display = 'flex';
+      } else {
+        sidebarToggle.style.display = 'none';
+        rightSidebar.classList.remove('active');
+      }
+    });
+  }
+}
+
 // Call initialization when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeUI);
