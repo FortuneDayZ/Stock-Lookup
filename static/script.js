@@ -27,8 +27,47 @@ function updateThemeIcon() {
 
 // Sidebar toggle functionality
 const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
 const rightSidebar = document.querySelector('.right-sidebar');
+const mainContent = document.querySelector('.main-content');
 
+// Initialize sidebar state
+let sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+if (sidebarCollapsed) {
+  rightSidebar.classList.add('collapsed');
+  mainContent.classList.add('sidebar-collapsed');
+  updateSidebarToggleIcon();
+}
+
+if (sidebarToggleBtn && rightSidebar) {
+  sidebarToggleBtn.addEventListener('click', () => {
+    sidebarCollapsed = !sidebarCollapsed;
+    
+    if (sidebarCollapsed) {
+      rightSidebar.classList.add('collapsed');
+      mainContent.classList.add('sidebar-collapsed');
+    } else {
+      rightSidebar.classList.remove('collapsed');
+      mainContent.classList.remove('sidebar-collapsed');
+    }
+    
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+    updateSidebarToggleIcon();
+  });
+}
+
+function updateSidebarToggleIcon() {
+  if (sidebarToggleBtn) {
+    const icon = sidebarToggleBtn.querySelector('i');
+    if (sidebarCollapsed) {
+      icon.className = 'fas fa-chevron-right';
+    } else {
+      icon.className = 'fas fa-chevron-left';
+    }
+  }
+}
+
+// Mobile sidebar toggle
 if (sidebarToggle && rightSidebar) {
   sidebarToggle.addEventListener('click', () => {
     rightSidebar.classList.toggle('active');
@@ -53,6 +92,18 @@ if (sidebarToggle && rightSidebar) {
     }
   });
 }
+
+// Handle window resize for responsive behavior
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 1024) {
+    // On desktop, ensure sidebar is visible (not in mobile active state)
+    rightSidebar.classList.remove('active');
+    if (sidebarToggle) {
+      const icon = sidebarToggle.querySelector('i');
+      icon.className = 'fas fa-bars';
+    }
+  }
+});
 
 // Form handling
 const stockForm = document.getElementById('stockForm');
@@ -820,6 +871,15 @@ stockForm.addEventListener('submit', async (e) => {
       document.getElementById('outlook').innerHTML = createCompanyOutlook(data.company, data.stock);
       document.getElementById('summary').innerHTML = createStockSummary(data.stock);
       
+      // Store latest price for portfolio calculations
+      if (data.stock && data.stock.last_close) {
+        setLatestPrice(ticker, data.stock.last_close);
+      }
+      
+      // Update portfolio summary and watchlist
+      updatePortfolioSummary();
+      renderWatchlist();
+      
       // Wait for the DOM to update before initializing the chart
       setTimeout(() => {
         initializePriceHistoryChart(ticker);
@@ -921,30 +981,51 @@ function removeFromWatchlist(ticker) {
 
 function renderWatchlist() {
   const list = getWatchlist();
-  const ul = document.getElementById('watchlist');
-  if (!ul) return;
+  const container = document.getElementById('watchlist');
+  if (!container) return;
   
-  ul.innerHTML = '';
+  container.innerHTML = '';
   if (list.length === 0) {
-    ul.innerHTML = '<li style="color:var(--text-secondary);font-style:italic;">No stocks saved.</li>';
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-eye"></i>
+        <p>No stocks in watchlist</p>
+      </div>
+    `;
     return;
   }
   
   list.forEach(ticker => {
-    const li = document.createElement('li');
-    li.className = 'watchlist-item';
-    li.innerHTML = `
-      <span class="ticker" style="cursor:pointer;">${ticker}</span>
-      <button class="remove-watchlist" style="background:none;border:none;color:var(--error-color);font-size:1.1rem;cursor:pointer;">&times;</button>
+    const item = document.createElement('div');
+    item.className = 'watchlist-item';
+    item.innerHTML = `
+      <i class="fas fa-chart-line"></i>
+      <span class="ticker">${ticker}</span>
+      <span class="price">Loading...</span>
     `;
     
-    li.querySelector('.ticker').onclick = () => {
+    // Add click handler to load stock data
+    item.addEventListener('click', () => {
       tickerInput.value = ticker;
       stockForm.dispatchEvent(new Event('submit'));
-    };
+    });
     
-    li.querySelector('.remove-watchlist').onclick = () => removeFromWatchlist(ticker);
-    ul.appendChild(li);
+    // Add right-click context menu for remove option
+    item.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (confirm(`Remove ${ticker} from watchlist?`)) {
+        removeFromWatchlist(ticker);
+      }
+    });
+    
+    container.appendChild(item);
+    
+    // Try to get latest price for this ticker
+    const latestPrices = getLatestPrices();
+    if (latestPrices[ticker]) {
+      const priceElement = item.querySelector('.price');
+      priceElement.textContent = formatCurrency(latestPrices[ticker]);
+    }
   });
 }
 
@@ -956,6 +1037,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const ticker = tickerInput.value.trim().toUpperCase();
       if (ticker) {
         addToWatchlist(ticker);
+      } else {
+        // Show modal or prompt for ticker input
+        const input = prompt('Enter stock ticker to add to watchlist:');
+        if (input && input.trim()) {
+          addToWatchlist(input.trim().toUpperCase());
+        }
       }
     };
   }
@@ -1007,7 +1094,7 @@ function renderNotesSection(ticker) {
     notesContainer.innerHTML = `
       <div class="empty-state">
         <i class="fas fa-sticky-note"></i>
-        <p>No notes yet. Click the + button to add a note.</p>
+        <p>No notes for ${ticker}</p>
       </div>
     `;
     return;
@@ -1035,6 +1122,34 @@ function renderNotesSection(ticker) {
     });
   });
 }
+
+// Add event listener for the notes button
+document.addEventListener('DOMContentLoaded', function() {
+  const addNoteBtn = document.getElementById('addNoteBtn');
+  if (addNoteBtn) {
+    addNoteBtn.onclick = function() {
+      const ticker = tickerInput.value.trim().toUpperCase();
+      if (ticker) {
+        // Show modal or prompt for note input
+        const title = prompt('Enter note title:');
+        if (title && title.trim()) {
+          const content = prompt('Enter note content:');
+          if (content && content.trim()) {
+            const note = {
+              title: title.trim(),
+              content: content.trim(),
+              timestamp: new Date().toISOString()
+            };
+            saveNoteForTicker(ticker, note);
+            renderNotesSection(ticker);
+          }
+        }
+      } else {
+        alert('Please search for a stock first to add notes.');
+      }
+    };
+  }
+});
 
 // --- Portfolio Tracker Feature ---
 function getPortfolio() {
@@ -1098,6 +1213,23 @@ function calculatePortfolioValue() {
     }
   });
   return total;
+}
+
+function updatePortfolioSummary() {
+  const totalValue = calculatePortfolioValue();
+  const totalValueElement = document.getElementById('totalPortfolioValue');
+  const totalReturnElement = document.getElementById('totalPortfolioReturn');
+  
+  if (totalValueElement) {
+    totalValueElement.textContent = formatCurrency(totalValue);
+  }
+  
+  if (totalReturnElement) {
+    // For now, we'll show a placeholder return value
+    // In a real implementation, you'd calculate actual returns
+    totalReturnElement.textContent = '0.00%';
+    totalReturnElement.className = 'value';
+  }
 }
 
 function renderPortfolioModal() {
@@ -1507,10 +1639,26 @@ function initializeUI() {
   ensurePortfolioButton();
   ensureSidebarToggle();
   
+  // Initialize sidebar components
+  renderWatchlist();
+  updatePortfolioSummary();
+  
   // Add calculator button click handler
   const calculatorBtn = document.getElementById('calculatorBtn');
   if (calculatorBtn) {
     calculatorBtn.onclick = renderPerformanceCalculator;
+  }
+  
+  // Add portfolio button click handler
+  const portfolioBtn = document.getElementById('portfolioBtn');
+  if (portfolioBtn) {
+    portfolioBtn.onclick = renderPortfolioModal;
+  }
+  
+  // Add comparison button click handler
+  const comparisonBtn = document.getElementById('comparisonBtn');
+  if (comparisonBtn) {
+    comparisonBtn.onclick = renderComparisonModal;
   }
 }
 
@@ -1537,6 +1685,99 @@ function ensureSidebarToggle() {
       }
     });
   }
+}
+
+// Performance Calculator Modal
+function renderPerformanceCalculator() {
+  let modal = document.getElementById('calculatorModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'calculatorModal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(0,0,0,0.3)';
+    modal.style.zIndex = '2000';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+  
+  modal.innerHTML = `
+    <div style="background:var(--card-background);padding:2rem;border-radius:1rem;min-width:400px;max-width:95vw;max-height:90vh;overflow:auto;box-shadow:0 2px 16px rgba(0,0,0,0.15);">
+      <h2 style="margin-bottom:1rem;">Performance Calculator</h2>
+      
+      <form id="calculatorForm" style="margin-bottom:2rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1rem;">
+          <div>
+            <label style="display:block;margin-bottom:0.5rem;color:var(--text-color);">Initial Investment</label>
+            <input id="initialInvestment" type="number" min="0" step="0.01" placeholder="1000" style="width:100%;padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.5rem;color:var(--text-color);">Current Value</label>
+            <input id="currentValue" type="number" min="0" step="0.01" placeholder="1200" style="width:100%;padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:0.5rem;color:var(--text-color);">Time Period (years)</label>
+            <input id="timePeriod" type="number" min="0" step="0.1" placeholder="1" style="width:100%;padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--card-background);color:var(--text-color);" required />
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;">Calculate Performance</button>
+      </form>
+
+      <div id="calculatorResults" style="display:none;">
+        <h3 style="margin-bottom:1rem;">Results</h3>
+        <div style="background:var(--hover-color);padding:1rem;border-radius:0.5rem;margin-bottom:1rem;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+            <span>Total Return:</span>
+            <span id="totalReturn" style="font-weight:600;"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+            <span>Annualized Return:</span>
+            <span id="annualizedReturn" style="font-weight:600;"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span>Profit/Loss:</span>
+            <span id="profitLoss" style="font-weight:600;"></span>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="document.getElementById('calculatorModal').remove();" class="btn-secondary" style="width:100%;">Close</button>
+    </div>
+  `;
+  
+  // Attach form handler
+  setTimeout(() => {
+    const form = document.getElementById('calculatorForm');
+    if (form) {
+      form.onsubmit = function(e) {
+        e.preventDefault();
+        const initial = Number(document.getElementById('initialInvestment').value);
+        const current = Number(document.getElementById('currentValue').value);
+        const time = Number(document.getElementById('timePeriod').value);
+        
+        if (initial <= 0 || current <= 0 || time <= 0) {
+          alert('Please enter valid positive numbers');
+          return;
+        }
+        
+        const profitLoss = current - initial;
+        const totalReturn = (profitLoss / initial) * 100;
+        const annualizedReturn = time > 0 ? (Math.pow(current / initial, 1 / time) - 1) * 100 : 0;
+        
+        document.getElementById('totalReturn').textContent = `${totalReturn.toFixed(2)}%`;
+        document.getElementById('annualizedReturn').textContent = `${annualizedReturn.toFixed(2)}%`;
+        document.getElementById('profitLoss').textContent = `$${profitLoss.toFixed(2)}`;
+        
+        document.getElementById('calculatorResults').style.display = 'block';
+      };
+    }
+  }, 100);
 }
 
 // Call initialization when DOM is loaded

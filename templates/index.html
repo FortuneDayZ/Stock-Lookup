@@ -83,74 +83,98 @@
 
   <!-- Right Sidebar -->
   <aside class="right-sidebar">
+    <!-- Sidebar Header with Toggle -->
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <i class="fas fa-chart-line"></i>
+        <span>Tools</span>
+      </div>
+      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+    </div>
+
     <div class="sidebar-content">
-      <!-- Navigation Section -->
-      <div class="sidebar-section navigation-section">
-        <a href="/" class="sidebar-nav-link active">
-          <i class="fas fa-home"></i>
-          <span>Home</span>
-        </a>
-        <button id="themeToggle" class="sidebar-nav-link">
-          <i class="fas fa-moon"></i>
-          <span>Theme</span>
-        </button>
+      <!-- Investment Tools Section -->
+      <div class="sidebar-section-header">
+        <i class="fas fa-tools"></i>
+        <span>Investment Tools</span>
+      </div>
+      
+      <button id="portfolioBtn" class="sidebar-nav-item">
+        <i class="fas fa-briefcase"></i>
+        <span>Portfolio Tracker</span>
+      </button>
+      
+      <button id="comparisonBtn" class="sidebar-nav-item">
+        <i class="fas fa-balance-scale"></i>
+        <span>Compare Companies</span>
+      </button>
+      
+      <button id="calculatorBtn" class="sidebar-nav-item">
+        <i class="fas fa-calculator"></i>
+        <span>Performance Calculator</span>
+      </button>
+
+      <!-- Watchlist Section -->
+      <div class="sidebar-section-header">
+        <i class="fas fa-eye"></i>
+        <span>Watchlist</span>
+      </div>
+      
+      <button id="addToWatchlistBtn" class="sidebar-nav-item">
+        <i class="fas fa-plus-circle"></i>
+        <span>Add to Watchlist</span>
+      </button>
+      
+      <div id="watchlist" class="watchlist-container">
+        <!-- Watchlist items will be populated here -->
       </div>
 
-      <div class="sidebar-section">
-        <h3><i class="fas fa-tools"></i> Investment Tools</h3>
-        <button id="portfolioBtn" class="sidebar-btn">
-          <i class="fas fa-briefcase"></i>
-          <span>Portfolio Tracker</span>
-        </button>
-        <button id="comparisonBtn" class="sidebar-btn">
-          <i class="fas fa-chart-bar"></i>
-          <span>Compare Companies</span>
-        </button>
-        <button id="calculatorBtn" class="sidebar-btn">
-          <i class="fas fa-calculator"></i>
-          <span>Performance Calculator</span>
-        </button>
+      <!-- Notes Section -->
+      <div class="sidebar-section-header">
+        <i class="fas fa-sticky-note"></i>
+        <span>Notes</span>
+      </div>
+      
+      <button id="addNoteBtn" class="sidebar-nav-item">
+        <i class="fas fa-edit"></i>
+        <span>Add Note</span>
+      </button>
+      
+      <div id="notesContainer" class="notes-container">
+        <!-- Notes will be populated here -->
       </div>
 
-      <div class="sidebar-section">
-        <div class="section-header">
-          <h3><i class="fas fa-eye"></i> Watchlist</h3>
-          <button id="addToWatchlistBtn" class="icon-btn" title="Add to Watchlist">
-            <i class="fas fa-plus"></i>
-          </button>
-        </div>
-        <div id="watchlist" class="watchlist-container">
-          <!-- Watchlist items will be populated here -->
-        </div>
+      <!-- Portfolio Summary Section -->
+      <div class="sidebar-section-header">
+        <i class="fas fa-chart-pie"></i>
+        <span>Portfolio Summary</span>
       </div>
-
-      <div class="sidebar-section">
-        <div class="section-header">
-          <h3><i class="fas fa-sticky-note"></i> Notes</h3>
-          <button id="addNoteBtn" class="icon-btn" title="Add Note">
-            <i class="fas fa-plus"></i>
-          </button>
+      
+      <div id="portfolioSummary" class="portfolio-summary">
+        <div class="summary-item">
+          <i class="fas fa-dollar-sign"></i>
+          <span class="label">Total Value</span>
+          <span class="value" id="totalPortfolioValue">$0.00</span>
         </div>
-        <div id="notesContainer" class="notes-container">
-          <!-- Notes will be populated here -->
+        <div class="summary-item">
+          <i class="fas fa-trending-up"></i>
+          <span class="label">Total Return</span>
+          <span class="value" id="totalPortfolioReturn">0.00%</span>
         </div>
       </div>
 
-      <div class="sidebar-section">
-        <div class="section-header">
-          <h3><i class="fas fa-chart-pie"></i> Portfolio Summary</h3>
-        </div>
-        <div id="portfolioSummary" class="portfolio-summary">
-          <div class="summary-item">
-            <span class="label">Total Value</span>
-            <span class="value" id="totalPortfolioValue">$0.00</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Total Return</span>
-            <span class="value" id="totalPortfolioReturn">0.00%</span>
-          </div>
-        </div>
+      <!-- Theme Toggle -->
+      <div class="sidebar-section-header">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
       </div>
+      
+      <button id="themeToggle" class="sidebar-nav-item">
+        <i class="fas fa-moon"></i>
+        <span>Toggle Theme</span>
+      </button>
     </div>
   </aside>
 
