@@ -1306,9 +1306,9 @@ input[type="text"]:focus {
 }
 
 .delete-note {
-  position: absolute;
-  top: 0.75rem; /* Increased position */
-  right: 0.75rem; /* Increased position */
+  /* position: absolute; */
+  /* top: 0.75rem; */
+  /* right: 0.75rem; */
   background: rgba(239, 68, 68, 0.1);
   border: none;
   color: var(--error-color);
