@@ -112,6 +112,7 @@ const searchBtn = document.getElementById('searchBtn');
 const clearBtn = document.getElementById('clearBtn');
 const errorMessage = document.getElementById('errorMessage');
 const resultBox = document.getElementById('resultBox');
+const notesContainer = document.getElementById('notesContainer');
 
 // Tab handling
 const tabs = document.querySelectorAll('.tab');
@@ -144,6 +145,16 @@ function clearResults() {
   tabs.forEach(tab => tab.classList.remove('active'));
   tabs[0].classList.add('active');
   tabContents[0].classList.add('active');
+  
+  // Clear notes section
+  if (notesContainer) {
+    notesContainer.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-sticky-note"></i>
+        <p>No stock selected</p>
+      </div>
+    `;
+  }
 }
 
 function formatNumber(num) {
@@ -880,6 +891,9 @@ stockForm.addEventListener('submit', async (e) => {
       updatePortfolioSummary();
       renderWatchlist();
       
+      // Load notes for the current ticker
+      renderNotesSection(ticker);
+      
       // Wait for the DOM to update before initializing the chart
       setTimeout(() => {
         initializePriceHistoryChart(ticker);
@@ -1101,26 +1115,157 @@ function renderNotesSection(ticker) {
   }
 
   notesContainer.innerHTML = tickerNotes.map((note, index) => `
-    <div class="note-item">
+    <div class="note-item" data-index="${index}">
       <div class="note-header">
         <h4 class="note-title">${note.title}</h4>
+        <div class="note-actions">
+          <button class="note-action-btn edit-note" data-index="${index}" title="Edit note">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="note-action-btn delete-note" data-index="${index}" title="Delete note">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+      </div>
+      <div class="note-meta">
         <span class="note-date">${formatTimestamp(note.timestamp)}</span>
       </div>
-      <div class="note-content">${note.content}</div>
-      <button class="delete-note" data-index="${index}" title="Delete note">
-        <i class="fas fa-trash-alt"></i>
-      </button>
     </div>
   `).join('');
 
-  // Add event listeners to delete buttons
-  notesContainer.querySelectorAll('.delete-note').forEach(button => {
-    button.addEventListener('click', (e) => {
-      const index = parseInt(e.target.closest('.delete-note').dataset.index);
-      deleteNoteForTicker(ticker, index);
-      renderNotesSection(ticker);
+  // Add event listeners to note items
+  notesContainer.querySelectorAll('.note-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      // Don't trigger if clicking on action buttons
+      if (e.target.closest('.note-action-btn')) return;
+      
+      const index = parseInt(item.dataset.index);
+      openNoteModal(ticker, index);
     });
   });
+
+  // Add event listeners to action buttons
+  notesContainer.querySelectorAll('.edit-note').forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const index = parseInt(button.dataset.index);
+      openNoteModal(ticker, index, true);
+    });
+  });
+
+  notesContainer.querySelectorAll('.delete-note').forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const index = parseInt(button.dataset.index);
+      if (confirm('Are you sure you want to delete this note?')) {
+        deleteNoteForTicker(ticker, index);
+        renderNotesSection(ticker);
+      }
+    });
+  });
+}
+
+function openNoteModal(ticker, index = null, isEditing = false) {
+  const notes = getStockNotes();
+  const tickerNotes = notes[ticker] || [];
+  const note = index !== null ? tickerNotes[index] : null;
+  
+  let modal = document.getElementById('noteModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'noteModal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+
+  const isNewNote = index === null;
+  const modalTitle = isNewNote ? 'Add New Note' : (isEditing ? 'Edit Note' : 'View Note');
+  
+  modal.innerHTML = `
+    <div class="modal-content note-modal">
+      <div class="modal-header">
+        <h2>${modalTitle}</h2>
+        <button class="modal-close" onclick="closeNoteModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        ${isNewNote || isEditing ? `
+          <form id="noteForm">
+            <div class="form-group">
+              <label for="noteTitle">Title</label>
+              <input type="text" id="noteTitle" value="${note ? note.title : ''}" required>
+            </div>
+            <div class="form-group">
+              <label for="noteContent">Content</label>
+              <textarea id="noteContent" rows="8" required>${note ? note.content : ''}</textarea>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" onclick="closeNoteModal()">Cancel</button>
+              <button type="submit" class="btn-primary">${isNewNote ? 'Add Note' : 'Save Changes'}</button>
+            </div>
+          </form>
+        ` : `
+          <div class="note-view">
+            <div class="note-view-header">
+              <h3>${note.title}</h3>
+              <span class="note-view-date">${formatTimestamp(note.timestamp)}</span>
+            </div>
+            <div class="note-view-content">
+              ${note.content.replace(/\n/g, '<br>')}
+            </div>
+            <div class="note-view-actions">
+              <button class="btn-secondary" onclick="openNoteModal('${ticker}', ${index}, true)">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="btn-secondary" onclick="closeNoteModal()">Close</button>
+            </div>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+
+  // Add form submission handler
+  if (isNewNote || isEditing) {
+    const form = modal.querySelector('#noteForm');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('noteTitle').value.trim();
+      const content = document.getElementById('noteContent').value.trim();
+      
+      if (title && content) {
+        const newNote = {
+          title: title,
+          content: content,
+          timestamp: isNewNote ? new Date().toISOString() : note.timestamp,
+          lastModified: new Date().toISOString()
+        };
+        
+        if (isNewNote) {
+          saveNoteForTicker(ticker, newNote);
+        } else {
+          // Update existing note
+          const notes = getStockNotes();
+          notes[ticker][index] = newNote;
+          setStockNotes(notes);
+        }
+        
+        renderNotesSection(ticker);
+        closeNoteModal();
+      }
+    });
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeNoteModal() {
+  const modal = document.getElementById('noteModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
 }
 
 // Add event listener for the notes button
@@ -1130,20 +1275,7 @@ document.addEventListener('DOMContentLoaded', function() {
     addNoteBtn.onclick = function() {
       const ticker = tickerInput.value.trim().toUpperCase();
       if (ticker) {
-        // Show modal or prompt for note input
-        const title = prompt('Enter note title:');
-        if (title && title.trim()) {
-          const content = prompt('Enter note content:');
-          if (content && content.trim()) {
-            const note = {
-              title: title.trim(),
-              content: content.trim(),
-              timestamp: new Date().toISOString()
-            };
-            saveNoteForTicker(ticker, note);
-            renderNotesSection(ticker);
-          }
-        }
+        openNoteModal(ticker);
       } else {
         alert('Please search for a stock first to add notes.');
       }
@@ -1247,7 +1379,7 @@ function renderPortfolioModal() {
     modal.style.display = 'flex';
     modal.style.justifyContent = 'center';
     modal.style.alignItems = 'center';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.style.onclick = (e) => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);
   }
   const portfolio = getPortfolio();
@@ -1392,7 +1524,7 @@ function renderComparisonModal() {
     modal.style.display = 'flex';
     modal.style.justifyContent = 'center';
     modal.style.alignItems = 'center';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.style.onclick = (e) => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);
   }
 
@@ -1643,6 +1775,16 @@ function initializeUI() {
   renderWatchlist();
   updatePortfolioSummary();
   
+  // Initialize notes section with default state
+  if (notesContainer) {
+    notesContainer.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-sticky-note"></i>
+        <p>No stock selected</p>
+      </div>
+    `;
+  }
+  
   // Add calculator button click handler
   const calculatorBtn = document.getElementById('calculatorBtn');
   if (calculatorBtn) {
@@ -1703,7 +1845,7 @@ function renderPerformanceCalculator() {
     modal.style.display = 'flex';
     modal.style.justifyContent = 'center';
     modal.style.alignItems = 'center';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.style.onclick = (e) => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);
   }
   
