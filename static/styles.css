@@ -1098,17 +1098,27 @@ input[type="text"]:focus {
 .watchlist-item {
   display: flex;
   align-items: center;
-  gap: 1rem; /* Increased gap */
-  padding: 1rem 1.25rem; /* Increased padding */
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
   background: transparent;
   border: none;
-  border-radius: 1rem; /* More rounded */
+  border-radius: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   cursor: pointer;
   width: 100%;
   text-align: left;
+}
+
+.watchlist-item-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .watchlist-item::before {
@@ -1121,7 +1131,7 @@ input[type="text"]:focus {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 1rem; /* More rounded */
+  border-radius: 1rem;
   transform: scale(0.95);
 }
 
@@ -1140,13 +1150,41 @@ input[type="text"]:focus {
   box-shadow: 0 8px 25px rgba(37, 99, 235, 0.2);
 }
 
+.watchlist-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  opacity: 0.6;
+}
+
+.watchlist-item:hover .watchlist-remove-btn {
+  opacity: 1;
+  color: white;
+}
+
+.watchlist-remove-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
 .watchlist-item .ticker {
   font-weight: 600;
   color: var(--text-color);
-  font-size: 1rem; /* Increased font size */
+  font-size: 1rem;
   flex: 1;
-  position: relative;
-  z-index: 1;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1157,9 +1195,7 @@ input[type="text"]:focus {
 .watchlist-item .price {
   color: var(--text-secondary);
   font-weight: 500;
-  font-size: 0.95rem; /* Increased font size */
-  position: relative;
-  z-index: 1;
+  font-size: 0.95rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

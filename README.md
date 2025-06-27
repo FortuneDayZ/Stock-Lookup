@@ -1,17 +1,19 @@
-# SimpleStockTracker
-https://github.com/defeat-beta/defeatbeta-api/blob/main/doc/Example.md#15-example-accessing-financial-news
+# StockLookup
 ## 📘 Overview
 
-**SimpleStockTracker** is a user-friendly web application that enables users to quickly search and view detailed stock market data using a stock ticker symbol. Built with Flask and SQLite, this app fetches real-time data from the Tiingo API and provides users with a straightforward interface to view company details, stock summaries, and recent search history.
+**StockLookup** is a user-friendly web application that enables users to quickly search and view detailed stock market data using a stock ticker symbol. Built with Flask and modern web technologies, this app fetches real-time data from multiple APIs including Tiingo and DefeatBeta to provide users with a comprehensive interface to view company details, stock summaries, and recent search history.
 
 ---
 
 ## ✨ Features
 
 - **Stock Lookup**: Enter any ticker symbol to instantly retrieve company information and recent stock performance.
-- **Real-Time Data**: Powered by Tiingo API to ensure accurate and up-to-date stock market information.
+- **Real-Time Data**: Powered by Tiingo API and DefeatBeta API to ensure accurate and up-to-date stock market information.
 - **Search History**: Automatically saves your latest searches for easy reference.
 - **Tabbed Interface**: Seamlessly switch between Company Outlook, Stock Summary, and Search History.
+- **Investment Tools**: Portfolio tracker, company comparison, and performance calculator.
+- **Personal Notes**: Add and manage notes for each stock.
+- **Theme Toggle**: Switch between light and dark themes.
 
 ---
 
@@ -21,6 +23,10 @@ https://github.com/defeat-beta/defeatbeta-api/blob/main/doc/Example.md#15-exampl
 - Flask
 - SQLite
 - Requests
+- Pandas
+- NumPy
+- DefeatBeta API
+- BeautifulSoup4
 
 ---
 
@@ -65,7 +71,7 @@ python app.py
 Visit the app in your browser at:
 
 ```
-http://localhost:5000
+http://127.0.0.1:5001
 ```
 
 ---
@@ -102,7 +108,7 @@ Stock-Lookup/
 
 - Make sure the Tiingo API key is active and correctly added.
 - Double-check your virtual environment is activated.
-- If `search_history.db` doesn’t exist, it will be created on first app run.
+- If `search_history.db` doesn't exist, it will be created on first app run.
 
 ---
 

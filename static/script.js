@@ -1013,23 +1013,41 @@ function renderWatchlist() {
     const item = document.createElement('div');
     item.className = 'watchlist-item';
     item.innerHTML = `
-      <i class="fas fa-chart-line"></i>
-      <span class="ticker">${ticker}</span>
-      <span class="price">Loading...</span>
+      <div class="watchlist-item-content">
+        <i class="fas fa-chart-line"></i>
+        <span class="ticker">${ticker}</span>
+        <span class="price">Loading...</span>
+      </div>
+      <button class="watchlist-remove-btn" title="Remove from watchlist">
+        <i class="fas fa-times"></i>
+      </button>
     `;
     
-    // Add click handler to load stock data
-    item.addEventListener('click', () => {
+    // Add click handler to load stock data (only on the content area)
+    const contentArea = item.querySelector('.watchlist-item-content');
+    contentArea.addEventListener('click', () => {
       tickerInput.value = ticker;
       stockForm.dispatchEvent(new Event('submit'));
     });
     
-    // Add right-click context menu for remove option
-    item.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
+    // Add remove button handler
+    const removeBtn = item.querySelector('.watchlist-remove-btn');
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering the content click
       if (confirm(`Remove ${ticker} from watchlist?`)) {
         removeFromWatchlist(ticker);
       }
+    });
+    
+    // Add hover effects for remove button
+    removeBtn.addEventListener('mouseenter', () => {
+      removeBtn.style.backgroundColor = 'var(--error-color, #dc3545)';
+      removeBtn.style.color = 'white';
+    });
+    
+    removeBtn.addEventListener('mouseleave', () => {
+      removeBtn.style.backgroundColor = 'transparent';
+      removeBtn.style.color = 'var(--text-color)';
     });
     
     container.appendChild(item);
@@ -1530,7 +1548,12 @@ function renderComparisonModal() {
 
   modal.innerHTML = `
     <div style="background:var(--card-background);padding:2rem;border-radius:1rem;min-width:350px;max-width:95vw;max-height:90vh;overflow:auto;box-shadow:0 2px 16px rgba(0,0,0,0.15);">
-      <h2 style="margin-bottom:1rem;">Compare Companies</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h2 style="margin:0;">Compare Companies</h2>
+        <button id="closeComparisonModal" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-color);padding:0.5rem;border-radius:0.25rem;transition:background-color 0.2s;" title="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
       
       <form id="comparisonForm" style="margin-bottom:2rem;background:var(--hover-color);padding:1rem;border-radius:0.5rem;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1rem;">
@@ -1607,8 +1630,25 @@ function renderComparisonModal() {
     </div>
   `;
 
-  // Attach form handler
+  // Attach close button handler
   setTimeout(() => {
+    const closeBtn = document.getElementById('closeComparisonModal');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        modal.remove();
+      });
+      
+      // Add hover effect for close button
+      closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.backgroundColor = 'var(--hover-color)';
+      });
+      
+      closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.backgroundColor = 'transparent';
+      });
+    }
+
+    // Attach form handler
     const form = document.getElementById('comparisonForm');
     if (form) {
       form.onsubmit = async function(e) {
