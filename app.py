@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import requests
 import sqlite3
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 import json
 import defeatbeta_api
 from defeatbeta_api.data.ticker import Ticker
@@ -308,7 +308,7 @@ def search():
             stock_data['ebitda'] = None
 
         # Get current timestamp for API call using timezone-aware datetime
-        api_timestamp = datetime.now(UTC).isoformat()
+        api_timestamp = datetime.now(timezone.utc).isoformat()
 
         # -----------------------------------------------------------
         # Step 4: Save API call data to the database
