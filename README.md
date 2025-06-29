@@ -18,35 +18,61 @@
 ---
 
 ## 🖼️ Screenshots
-### 1. WelcomePage
-Shows short description of the app.
 
-<img src="https://github.com/FortuneDayZ/TrippyTrips/blob/main/Screenshots/Welcome.jpg?raw=true" width="250" />
+### 1. Main Search Interface
+The primary search page where users can enter stock ticker symbols to retrieve real-time market data.
 
-### 2. Login & Sign Up Screen
-Users can log in or create an account using a simple and intuitive form layout.
+<img src="Screenshots/01_main_search_interface.jpg" width="250" alt="Main Search Interface" />
 
-<img src="https://github.com/FortuneDayZ/TrippyTrips/blob/main/Screenshots/Login.jpg?raw=true" width="250" />
+### 2. Company Outlook Tab
+Displays comprehensive company information including business description, industry, sector, and key metrics.
 
-### 3. Category Search and Location Search
-Main navigation screen where users can search and browse by category such as Hotels, Dining, and Activities.
+<img src="Screenshots/02_company_outlook_tab.jpg" width="250" alt="Company Outlook Tab" />
 
-<img src="https://github.com/FortuneDayZ/TrippyTrips/blob/main/Screenshots/Search.jpg?raw=true" width="250" />
+### 3. Stock Summary Tab
+Shows current stock price, change percentage, volume, and other key financial metrics.
 
-### 4. Search Results Screen
-Displays a list of relevant places based on user queries, with ratings and add-to-saved buttons.
+<img src="Screenshots/03_stock_summary_tab.jpg" width="250" alt="Stock Summary Tab" />
 
-<img src="https://github.com/FortuneDayZ/TrippyTrips/blob/main/Screenshots/SearchResults.jpg?raw=true" width="250" />
+### 4. Search History Tab
+Lists all previous stock searches with timestamps for easy reference and quick access.
 
-### 5. Saved Items Screen
-Shows the list of user-saved places with key details like address and ratings.
+<img src="Screenshots/04_search_history_tab.jpg" width="250" alt="Search History Tab" />
 
-<img src="https://github.com/FortuneDayZ/TrippyTrips/blob/main/Screenshots/SavedResults.jpg?raw=true" width="250" />
+### 5. Investment Tools Sidebar
+Right sidebar containing various investment tools and features for enhanced stock analysis.
 
-### 6. Settings Screen
-Allows users to change their password, uninstall the app, or delete their account securely.
+<img src="Screenshots/05_investment_tools_sidebar.jpg" width="250" alt="Investment Tools Sidebar" />
 
-<img src="https://github.com/FortuneDayZ/TrippyTrips/blob/main/Screenshots/Settings.jpg?raw=true" width="250" />
+### 6. Portfolio Tracker
+Allows users to track their investment portfolio with real-time value and performance metrics.
+
+<img src="Screenshots/06_portfolio_tracker.jpg" width="250" alt="Portfolio Tracker" />
+
+### 7. Company Comparison
+Tool for comparing multiple companies side-by-side to make informed investment decisions.
+
+<img src="Screenshots/07_company_comparison.jpg" width="250" alt="Company Comparison" />
+
+### 8. Performance Calculator
+Advanced calculator for analyzing stock performance, returns, and risk metrics.
+
+<img src="Screenshots/08_performance_calculator.jpg" width="250" alt="Performance Calculator" />
+
+### 9. Watchlist Feature
+Manage a personalized watchlist of stocks for quick monitoring and tracking.
+
+<img src="Screenshots/09_watchlist_feature.jpg" width="250" alt="Watchlist Feature" />
+
+### 10. Notes Feature
+Add and manage personal notes and annotations for each stock in your portfolio.
+
+<img src="Screenshots/10_notes_feature.jpg" width="250" alt="Notes Feature" />
+
+### 11. Dark Theme Interface
+Toggle between light and dark themes for comfortable viewing in different lighting conditions.
+
+<img src="Screenshots/11_dark_theme_interface.jpg" width="250" alt="Dark Theme Interface" />
 
 ---
 
@@ -118,8 +144,10 @@ Stock-Lookup/
 ├── templates/
 │   └── index.html          # Front-end HTML page
 ├── static/
-│   ├── GreenArrowUP.png    # Image for positive stock movement
-│   └── RedArrowDown.png    # Image for negative stock movement
+│   ├── chart-line-favicon.svg  # Application favicon
+│   ├── script.js           # JavaScript functionality
+│   └── styles.css          # CSS styling
+├── Screenshots/            # Application screenshots
 ├── search_history.db       # SQLite DB for storing search history
 ├── requirements.txt        # Python dependencies
 └── README.md               # This file
