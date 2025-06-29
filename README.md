@@ -22,57 +22,57 @@
 ### 1. Main Search Interface
 The primary search page where users can enter stock ticker symbols to retrieve real-time market data.
 
-<img src="Screenshots/01_main_search_interface.jpg" width="250" alt="Main Search Interface" />
+<img src="Screenshots/01_main_search_interface.jpg" width="500" alt="Main Search Interface" />
 
 ### 2. Company Outlook Tab
 Displays comprehensive company information including business description, industry, sector, and key metrics.
 
-<img src="Screenshots/02_company_outlook_tab.jpg" width="250" alt="Company Outlook Tab" />
+<img src="Screenshots/02_company_outlook_tab.jpg" width="500" alt="Company Outlook Tab" />
 
 ### 3. Stock Summary Tab
 Shows current stock price, change percentage, volume, and other key financial metrics.
 
-<img src="Screenshots/03_stock_summary_tab.jpg" width="250" alt="Stock Summary Tab" />
+<img src="Screenshots/03_stock_summary_tab.jpg" width="500" alt="Stock Summary Tab" />
 
 ### 4. Search History Tab
 Lists all previous stock searches with timestamps for easy reference and quick access.
 
-<img src="Screenshots/04_search_history_tab.jpg" width="250" alt="Search History Tab" />
+<img src="Screenshots/04_search_history_tab.jpg" width="500" alt="Search History Tab" />
 
 ### 5. Investment Tools Sidebar
 Right sidebar containing various investment tools and features for enhanced stock analysis.
 
-<img src="Screenshots/05_investment_tools_sidebar.jpg" width="250" alt="Investment Tools Sidebar" />
+<img src="Screenshots/05_investment_tools_sidebar.jpg" width="500" alt="Investment Tools Sidebar" />
 
 ### 6. Portfolio Tracker
 Allows users to track their investment portfolio with real-time value and performance metrics.
 
-<img src="Screenshots/06_portfolio_tracker.jpg" width="250" alt="Portfolio Tracker" />
+<img src="Screenshots/06_portfolio_tracker.jpg" width="500" alt="Portfolio Tracker" />
 
 ### 7. Company Comparison
 Tool for comparing multiple companies side-by-side to make informed investment decisions.
 
-<img src="Screenshots/07_company_comparison.jpg" width="250" alt="Company Comparison" />
+<img src="Screenshots/07_company_comparison.jpg" width="500" alt="Company Comparison" />
 
 ### 8. Performance Calculator
 Advanced calculator for analyzing stock performance, returns, and risk metrics.
 
-<img src="Screenshots/08_performance_calculator.jpg" width="250" alt="Performance Calculator" />
+<img src="Screenshots/08_performance_calculator.jpg" width="500" alt="Performance Calculator" />
 
 ### 9. Watchlist Feature
 Manage a personalized watchlist of stocks for quick monitoring and tracking.
 
-<img src="Screenshots/09_watchlist_feature.jpg" width="250" alt="Watchlist Feature" />
+<img src="Screenshots/09_watchlist_feature.jpg" width="500" alt="Watchlist Feature" />
 
 ### 10. Notes Feature
 Add and manage personal notes and annotations for each stock in your portfolio.
 
-<img src="Screenshots/10_notes_feature.jpg" width="250" alt="Notes Feature" />
+<img src="Screenshots/10_notes_feature.jpg" width="500" alt="Notes Feature" />
 
 ### 11. Dark Theme Interface
 Toggle between light and dark themes for comfortable viewing in different lighting conditions.
 
-<img src="Screenshots/11_dark_theme_interface.jpg" width="250" alt="Dark Theme Interface" />
+<img src="Screenshots/11_dark_theme_interface.jpg" width="500" alt="Dark Theme Interface" />
 
 ---
 
