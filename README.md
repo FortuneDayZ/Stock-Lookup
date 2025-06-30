@@ -34,13 +34,13 @@ Shows current stock price, change percentage, volume, and other key financial me
 
 <img src="Screenshots/03_stock_summary_tab.jpg" width="500" alt="Stock Summary Tab" />
 
-### 4. Search History Tab
-Lists all previous stock searches with timestamps for easy reference and quick access.
+### 4. Daily Returns and Market Risk
+Shows the market risk for the particular stock and the hisorical data of the returns.
 
 <img src="Screenshots/04_search_history_tab.jpg" width="500" alt="Search History Tab" />
 
-### 5. Investment Tools Sidebar
-Right sidebar containing various investment tools and features for enhanced stock analysis.
+### 5. Search History Tab
+Lists all previous stock searches with timestamps for easy reference and quick access.
 
 <img src="Screenshots/05_investment_tools_sidebar.jpg" width="500" alt="Investment Tools Sidebar" />
 
@@ -53,14 +53,16 @@ Allows users to track their investment portfolio with real-time value and perfor
 Tool for comparing multiple companies side-by-side to make informed investment decisions.
 
 <img src="Screenshots/07_company_comparison.jpg" width="500" alt="Company Comparison" />
+<img src="Screenshots/11_dark_theme_interface.jpg" width="500" alt="Dark Theme Interface" />
 
-### 8. Performance Calculator
-Advanced calculator for analyzing stock performance, returns, and risk metrics.
+
+### 8. Investment Tools Sidebar
+Right sidebar containing various investment tools and features for enhanced stock analysis.
 
 <img src="Screenshots/08_performance_calculator.jpg" width="500" alt="Performance Calculator" />
 
-### 9. Watchlist Feature
-Manage a personalized watchlist of stocks for quick monitoring and tracking.
+### 9. Toggle between Theme Interfaces
+Toggle between light and dark themes for comfortable viewing in different lighting conditions.
 
 <img src="Screenshots/09_watchlist_feature.jpg" width="500" alt="Watchlist Feature" />
 
@@ -68,11 +70,6 @@ Manage a personalized watchlist of stocks for quick monitoring and tracking.
 Add and manage personal notes and annotations for each stock in your portfolio.
 
 <img src="Screenshots/10_notes_feature.jpg" width="500" alt="Notes Feature" />
-
-### 11. Dark Theme Interface
-Toggle between light and dark themes for comfortable viewing in different lighting conditions.
-
-<img src="Screenshots/11_dark_theme_interface.jpg" width="500" alt="Dark Theme Interface" />
 
 ---
 
