@@ -10,7 +10,7 @@ import pandas as pd
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 #TODO: PUT YOUR TIINGO KEY HERE
-TIINGO_API_KEY = "4f26eaae3b2b6922c9e4019f374a33ce9c81fa30"
+TIINGO_API_KEY = "YourApiKey"
 TIINGO_BASE_META = "https://api.tiingo.com/tiingo/daily/"
 TIINGO_BASE_IEX = "https://api.tiingo.com/iex/"
 
